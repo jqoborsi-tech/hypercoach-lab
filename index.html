@@ -1846,6 +1846,16 @@ function more(){
   const M=S.meso,p=S.profile,pl=placement(p);
   return header()+`
   <h2 style="margin-bottom:10px">Settings &amp; info</h2>
+  ${DRIVE.clientId?`<div class="card" style="${driveOn()?'border-color:var(--grn)':''}">
+    <div class="lbl" style="margin-bottom:6px">Google Drive sync</div>
+    ${driveOn()?`<p class="sm">☁️ <b class="grn">Connected</b> — your data saves to your own Google Drive
+      after every finished workout (any brief Google flash happens only at that moment).${S.drive.lastSync?' Last sync: '+new Date(S.drive.lastSync).toLocaleString():''}</p>
+      ${V.driveNeeds?'<button class="btn small" style="margin-top:8px" data-a="drive_connect">Reconnect</button>':''}
+      <button class="btn ghost" style="margin-top:8px" data-a="drive_off">Disconnect</button>`
+    :`<p class="sm mut">Link your own Google account and the app keeps a live copy of your data in
+      <b>your</b> Drive — automatic after every workout, restores itself on a new phone.</p>
+      <button class="btn primary" style="margin-top:10px" data-a="drive_connect">Connect Google Drive</button>`}
+  </div>`:''}
   ${p?`<div class="card">
     <div class="row between">
       <div><div class="lbl">Profile</div>
@@ -1974,16 +1984,6 @@ function more(){
     <div class="row between"><span class="sm">Auto-match weight <span class="xs dim">apply edits to later sets</span></span>
       <button class="btn small ${S.settings.autoMatch!==false?'':'ghost'}" data-a="automatch">${S.settings.autoMatch!==false?'On':'Off'}</button></div>
   </div>
-  ${DRIVE.clientId?`<div class="card" style="${driveOn()?'border-color:var(--grn)':''}">
-    <div class="lbl" style="margin-bottom:6px">Google Drive sync</div>
-    ${driveOn()?`<p class="sm">☁️ <b class="grn">Connected</b> — your data saves to your own Google Drive
-      after every finished workout (any brief Google flash happens only at that moment).${S.drive.lastSync?' Last sync: '+new Date(S.drive.lastSync).toLocaleString():''}</p>
-      ${V.driveNeeds?'<button class="btn small" style="margin-top:8px" data-a="drive_connect">Reconnect</button>':''}
-      <button class="btn ghost" style="margin-top:8px" data-a="drive_off">Disconnect</button>`
-    :`<p class="sm mut">Link your own Google account and the app keeps a live copy of your data in
-      <b>your</b> Drive — automatic after every workout, restores itself on a new phone.</p>
-      <button class="btn primary" style="margin-top:10px" data-a="drive_connect">Connect Google Drive</button>`}
-  </div>`:''}
   <div class="card">
     <div class="lbl" style="margin-bottom:10px">Data</div>
     <button class="btn" data-a="export">Back up → Files / iCloud / Google Drive</button>
