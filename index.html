@@ -905,7 +905,7 @@ async function driveBootSync(){
 S=load()||defaults();
 
 function newPf(){return {name:'',age:'',sex:'m',units:(S.settings&&S.settings.units)||'lb',
-  bw:'',ht:'',exp:'mid',goal:'gain',activity:'med',meals:4};}
+  bw:'',ht:'',htFt:'',htIn:'',exp:'mid',goal:'gain',activity:'med',meals:4};}
 const V={screen:!S.profile?'profile':(S.meso?'home':'welcome'),setup:null,fb:null,progEx:null,planWeek:null,
   timerEnd:0,timerTotal:0,lastChanges:null,confirmReset:false,pf:newPf()};
 
@@ -1236,7 +1236,8 @@ function profile(){
   const f=V.pf;
   const seg=(field,opts)=>`<div class="seg">${opts.map(o=>
     `<button class="opt ${f[field]===o[0]?'on':''}" data-a="pfset:${field}:${o[0]}">${o[1]}</button>`).join('')}</div>`;
-  const ready=f.name&&+f.age>0&&+f.bw>0&&+f.ht>0;
+  const htVal=f.units==='kg'?+f.ht:(+f.htFt*12+(+f.htIn||0));
+  const ready=f.name&&+f.age>0&&+f.bw>0&&htVal>0;
   const pl=ready?placement(f):null;
   const dc=ready?dietCalc({...f,goal:f.goal}):null;
   return header()+`
@@ -1249,8 +1250,16 @@ function profile(){
     <div class="row">
       <div style="flex:1"><div class="lbl" style="margin-bottom:6px">Age</div>
         <input class="in num" type="number" inputmode="numeric" value="${esc(f.age||'')}" placeholder="" data-in="pf:age"></div>
-      <div style="flex:1"><div class="lbl" style="margin-bottom:6px">Height (${f.units==='kg'?'cm':'inches'})</div>
-        <input class="in num" type="number" inputmode="decimal" value="${esc(f.ht||'')}" placeholder="" data-in="pf:ht"></div>
+      <div style="flex:1"><div class="lbl" style="margin-bottom:6px">Height${f.units==='kg'?' (cm)':''}</div>
+        ${f.units==='kg'
+          ?`<input class="in num" type="number" inputmode="decimal" value="${esc(f.ht||'')}" placeholder="" data-in="pf:ht">`
+          :`<div class="row" style="gap:6px">
+              <input class="in num" type="number" inputmode="numeric" value="${esc(f.htFt||'')}" placeholder="" data-in="pf:htFt" style="text-align:center">
+              <span class="mut">ft</span>
+              <input class="in num" type="number" inputmode="numeric" value="${esc(f.htIn||'')}" placeholder="" data-in="pf:htIn" style="text-align:center">
+              <span class="mut">in</span>
+            </div>`}
+      </div>
     </div>
     <div class="row">
       <div style="flex:1"><div class="lbl" style="margin-bottom:6px">Bodyweight (${f.units})</div>
@@ -2078,14 +2087,17 @@ const A={
     V.setup=newSetup(old);V.screen='setup';render();},
   pfset:arg=>{const i=arg.indexOf(':');V.pf[arg.slice(0,i)]=arg.slice(i+1);render();},
   pf_save:()=>{const f=V.pf;
-    if(!f.name||!(+f.age)||!(+f.bw)||!(+f.ht)){toast('Fill in name, age, height & bodyweight');return;}
-    S.profile={name:f.name.trim(),age:+f.age,sex:f.sex,bw:+f.bw,ht:+f.ht,units:f.units,
+    const htVal=f.units==='kg'?+f.ht:(+f.htFt*12+(+f.htIn||0));
+    if(!f.name||!(+f.age)||!(+f.bw)||!(htVal>0)){toast('Fill in name, age, height & bodyweight');return;}
+    S.profile={name:f.name.trim(),age:+f.age,sex:f.sex,bw:+f.bw,ht:htVal,units:f.units,
       exp:f.exp,goal:f.goal,activity:f.activity,meals:+f.meals||4};
     S.settings.units=f.units;
     const last=S.bw[S.bw.length-1];
     if(!last||last.d!==today())S.bw.push({d:today(),v:+f.bw});
     save();V.screen=S.meso?'home':'welcome';render();toast('Profile saved');},
-  pf_edit:()=>{V.pf=S.profile?{...S.profile}:newPf();V.screen='profile';render();},
+  pf_edit:()=>{V.pf=S.profile?{...S.profile}:newPf();
+    if(V.pf.units!=='kg'&&+V.pf.ht){V.pf.htFt=String(Math.floor(V.pf.ht/12));V.pf.htIn=String(Math.round(V.pf.ht%12));}
+    V.screen='profile';render();},
   dgoal:g=>{S.profile.goal=g;save();render();},
   dmeals:n=>{S.profile.meals=+n;save();render();},
   libm:m=>{V.libm=m;render();},
