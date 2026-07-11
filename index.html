@@ -1340,6 +1340,30 @@ const RECIPES=[
  {id:'r_cott',n:'Cottage Cheese & Berries',t:['bed'],p:30,c:20,f:6,
   ing:[['lowfat cottage cheese',1.25,'cup','D'],['mixed berries',0.75,'cup','V'],['almonds',0.5,'oz','S']],
   m:'Bowl it. Slow-digesting casein protein feeds you overnight.'},
+ {id:'r_pouch',n:'Chicken Pouch Rice Bowl',t:['peri','main'],p:40,c:50,f:5,z:1,
+  ing:[['chicken breast pouches',2,'','P'],['microwave jasmine rice',1,'cup','S'],['soy sauce',1,'tbsp','S'],['sriracha',1,'tsp','S']],
+  m:'Microwave rice 90 sec, dump in chicken, sauce, stir. Two minutes total.'},
+ {id:'r_rotis',n:'Rotisserie Chicken Plate',t:['main'],p:45,c:45,f:12,z:1,
+  ing:[['rotisserie chicken',6,'oz','P'],['microwave rice',1,'cup','S'],['bagged salad',2,'cup','V'],['light dressing',1,'tbsp','S']],
+  m:'Pull chicken off the bird, microwave rice, dress the salad. Zero cooking.'},
+ {id:'r_ovnoat',n:'Protein Overnight Oats',t:['bfast'],p:35,c:48,f:8,z:1,
+  ing:[['rolled oats',0.5,'cup','S'],['milk',1,'cup','D'],['whey protein',1,'scoop','S'],['frozen berries',0.5,'cup','V']],
+  m:'Shake it all in a jar the night before. Grab and eat cold.'},
+ {id:'r_wrap',n:'Turkey & Cheese Wraps',t:['main','bed'],p:40,c:35,f:13,z:1,
+  ing:[['deli turkey breast',6,'oz','P'],['large tortillas',2,'','S'],['cheese slices',1,'','D'],['mustard',1,'tbsp','S']],
+  m:'Roll everything up. No heat involved.'},
+ {id:'r_caesar',n:'Chicken Caesar Salad Kit',t:['main','bed'],p:45,c:15,f:18,z:1,
+  ing:[['caesar salad kit',0.5,'bag','V'],['rotisserie chicken',6,'oz','P']],
+  m:'Open bag, add pulled chicken, toss with the included dressing.'},
+ {id:'r_strips',n:'Frozen Chicken Strips Bowl',t:['peri','main'],p:38,c:55,f:7,z:1,
+  ing:[['frozen grilled chicken strips',6,'oz','P'],['frozen rice',1.25,'cup','S'],['frozen stir-fry vegetables',1,'cup','V'],['teriyaki sauce',1,'tbsp','S']],
+  m:'Everything from the freezer into the microwave. Four minutes.'},
+ {id:'r_eggs',n:'Boiled Eggs & Fruit Plate',t:['bfast','bed'],p:26,c:25,f:16,z:1,
+  ing:[['pre-peeled hard-boiled eggs',3,'','D'],['string cheese',1,'','D'],['apple',1,'','V']],
+  m:'Costco sells the eggs already boiled and peeled. Assemble, done.'},
+ {id:'r_bigshake',n:'Big Easy Shake',t:['pre','bfast'],p:50,c:45,f:16,z:1,
+  ing:[['whey protein',1.5,'scoop','S'],['milk',1.5,'cup','D'],['peanut butter',1,'tbsp','S'],['banana',1,'','V']],
+  m:'Blend 30 seconds. A full meal you can drink between patients.'},
  {id:'r_case',n:'Casein Pudding',t:['bed'],p:32,c:15,f:5,
   ing:[['casein protein',1.25,'scoop','S'],['nonfat greek yogurt',0.5,'cup','D'],['peanut butter',0.5,'tbsp','S']],
   m:'Stir casein into yogurt with a splash of milk until pudding-thick.'},
@@ -1488,7 +1512,7 @@ function diet(){
             <span class="xs mut num">${sl.p}P / ${sl.c}C / ${sl.f}F · ${sl.kcal} kcal</span>
           </div>
           <div class="row between" style="margin-top:6px">
-            <span class="sm grn">${esc(r.n)}</span>
+            <span class="sm grn">${esc(r.n)}${r.z?' <span class="chip" style="font-size:.6rem">⚡ no-cook</span>':''}</span>
             <span class="row" style="gap:8px">
               ${pool.length>1?`<button class="btn small ghost" data-a="mp_swap:${i}">🔀</button>`:''}
               <a class="vlink" href="${recipeVid(r)}" target="_blank" rel="noopener">▶</a>
