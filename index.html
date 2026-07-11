@@ -1478,7 +1478,7 @@ function diet(){
   const rateHi=d.goal==='gain'?+(d.bwLb*0.005).toFixed(1):d.goal==='cut'?-(d.bwLb*0.005).toFixed(1):0.3;
   const inRange=trend!==null&&trend>=Math.min(rateLo,rateHi)&&trend<=Math.max(rateLo,rateHi);
   const coach=trend===null
-    ?'Log your bodyweight most mornings (Today tab) — after ~2 weeks the app coaches your calories from the trend.'
+    ?'Log your bodyweight most mornings (Progress tab) — after ~2 weeks the app coaches your calories from the trend.'
     :inRange?`You're gaining/losing at ${trend>0?'+':''}${trend} ${unit()}/week — right on target. Change nothing.`
     :d.goal==='cut'
       ?(trend>Math.max(rateLo,rateHi)?`Trend ${trend>0?'+':''}${trend} ${unit()}/wk — too slow for a cut. Remove ~200 kcal/day (drop carbs or fat, keep protein).`:`Losing faster than ${rateLo} ${unit()}/wk risks muscle. Add ~150–200 kcal/day.`)
@@ -1763,7 +1763,6 @@ function home(){
   const day=M.days[d],tg=targetsFor(w,d);
   const totalSets=tg.reduce((a,b)=>a+b,0);
   const resume=S.draft&&S.draft.w===w&&S.draft.d===d;
-  const bwLast=S.bw.length?S.bw[S.bw.length-1]:null;
   return header()+`
   <div class="card" style="border-color:${deload?'var(--blu)':'var(--red)'}">
     <div class="row between" style="margin-bottom:6px">
@@ -1799,16 +1798,7 @@ function home(){
     <div class="lbl" style="margin-bottom:10px">This week's volume vs. landmarks</div>
     ${volBars(w)}
   </div>
-  <div class="card">
-    <div class="row between">
-      <div><div class="lbl">Bodyweight</div>
-      <div class="bignum">${bwLast?bwLast.v+`<span class="sm mut" style="font-weight:600"> ${unit()}</span>`:'—'}</div></div>
-      <div class="row">
-        <input class="in num" id="bwin" type="number" inputmode="decimal" placeholder="${unit()}" style="width:90px">
-        <button class="btn small" data-a="bw_add">Log</button>
-      </div>
-    </div>
-  </div>`;
+`;
 }
 function volBars(w){
   const M=S.meso,counts={};
@@ -2054,8 +2044,25 @@ function progress(){
   const sessions=exSessions();
   const ids=Object.keys(sessions);
   if(!V.progEx||!sessions[V.progEx])V.progEx=ids[0]||null;
+  const bwLast=S.bw.length?S.bw[S.bw.length-1]:null;
   return header()+`
   <h2 style="margin-bottom:10px">Progress</h2>
+  <div class="card">
+    <div class="row between" style="margin-bottom:8px">
+      <div><div class="lbl">Bodyweight</div>
+      <div class="bignum">${bwLast?bwLast.v+`<span class="sm mut" style="font-weight:600"> ${unit()}</span>`:'—'}</div></div>
+      <div class="row">
+        <input class="in num" id="bwin" type="number" inputmode="decimal" placeholder="${unit()}" style="width:90px">
+        <button class="btn small" data-a="bw_add">Log</button>
+      </div>
+    </div>
+    <p class="xs mut" style="margin-bottom:8px">For numbers you can trust: weigh <b>first thing in the morning</b>,
+    after the bathroom, before any food or water, same scale, same spot, minimal clothing. Daily swings of
+    ±2 ${unit()} are just water and food in transit — never react to one reading. The app judges your
+    <b>7-day average</b> (see Scale Coach in the Diet tab), so log most mornings and let the trend do the talking.</p>
+    ${S.bw.length>1?`<div id="bwchart"></div>`:'<p class="xs dim">Log a few mornings and your trend chart appears here.</p>'}
+    ${bwLast?`<div class="xs mut num" style="margin-top:6px">Last: ${bwLast.v} ${unit()} on ${bwLast.d}</div>`:''}
+  </div>
   <div class="card">
     <div class="lbl" style="margin-bottom:8px">Exercise strength trend</div>
     ${ids.length?`
@@ -2065,11 +2072,6 @@ function progress(){
       <div id="exchart"></div>
       <div class="xs dim" style="margin-top:6px">Estimated 1RM per session (weight × reps). Up and to the right = growth stimulus working.</div>`
       :'<p class="sm mut">Log your first workout to see trends.</p>'}
-  </div>
-  <div class="card">
-    <div class="lbl" style="margin-bottom:8px">Bodyweight</div>
-    ${S.bw.length>1?`<div id="bwchart"></div>`:'<p class="sm mut">Log bodyweight from the Today tab to trend it here.</p>'}
-    ${S.bw.length?`<div class="xs mut num" style="margin-top:6px">Last: ${S.bw[S.bw.length-1].v} ${unit()} on ${S.bw[S.bw.length-1].d}</div>`:''}
   </div>
   <div class="card">
     <div class="lbl" style="margin-bottom:8px">Recent best sets</div>
