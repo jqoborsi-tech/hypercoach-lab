@@ -906,7 +906,7 @@ S=load()||defaults();
 
 function newPf(){return {name:'',age:'',sex:'m',units:(S.settings&&S.settings.units)||'lb',
   bw:'',ht:'',htFt:'',htIn:'',exp:'mid',goal:'gain',activity:'med',meals:4};}
-const V={screen:!S.profile?'profile':(S.meso?'home':'welcome'),setup:null,fb:null,progEx:null,planWeek:null,
+const V={screen:!S.profile?'profile':(S.meso?'home':'welcome'),setup:null,fb:null,progEx:null,planWeek:null,dp:{train:'pm',window:'std'},
   timerEnd:0,timerTotal:0,lastChanges:null,confirmReset:false,pf:newPf()};
 
 /* ---------- Helpers ---------- */
@@ -1291,6 +1291,124 @@ function profile(){
   ${S.profile?`<button class="btn ghost" style="margin-top:8px" data-a="nav:more">Cancel</button>`:''}`;
 }
 
+
+/* ---------- Meal planner ----------
+   Recipes are simple macro-scalable staples. Slot macros follow the evidence:
+   protein spread evenly (~1/4 of daily per meal), carbs biased around training,
+   fat kept low peri-workout, slow protein last meal. Portions auto-scale so
+   each meal hits its protein target. */
+const RECIPES=[
+ {id:'r_yog',n:'Greek Yogurt Power Bowl',t:['bfast','bed'],p:35,c:45,f:8,
+  ing:[['nonfat greek yogurt',1.5,'cup','D'],['granola',0.5,'cup','S'],['mixed berries',1,'cup','V'],['honey',1,'tbsp','S']],
+  m:'Layer yogurt, berries, granola; drizzle honey.'},
+ {id:'r_oats',n:'Protein Oatmeal',t:['bfast'],p:35,c:55,f:9,
+  ing:[['rolled oats',0.75,'cup','S'],['whey protein',1.25,'scoop','S'],['banana',1,'','V'],['peanut butter',0.5,'tbsp','S']],
+  m:'Cook oats, stir in whey off heat, top with banana and PB.'},
+ {id:'r_scram',n:'Egg & Egg-White Scramble Plate',t:['bfast'],p:35,c:40,f:12,
+  ing:[['eggs',2,'','D'],['egg whites',6,'','D'],['sourdough toast',2,'slice','S'],['spinach',1,'cup','V']],
+  m:'Scramble eggs with spinach; serve with toast.'},
+ {id:'r_burr',n:'Chicken Burrito Bowl',t:['peri','main'],p:45,c:65,f:12,
+  ing:[['chicken breast',6,'oz','P'],['white rice (cooked)',1.5,'cup','S'],['black beans',0.5,'cup','S'],['salsa',0.25,'cup','S'],['shredded cheese',0.25,'cup','D']],
+  m:'Dice and sear chicken; bowl with rice, beans, salsa, cheese.'},
+ {id:'r_tuna',n:'Tuna Rice Bowl',t:['peri','main'],p:40,c:60,f:6,
+  ing:[['canned tuna',2,'can','P'],['white rice (cooked)',1.5,'cup','S'],['soy sauce',1,'tbsp','S'],['cucumber',0.5,'','V'],['sriracha mayo (light)',1,'tbsp','S']],
+  m:'Mix tuna with sauce over warm rice; top cucumber.'},
+ {id:'r_pasta',n:'Ground Turkey Pasta',t:['main'],p:45,c:60,f:14,
+  ing:[['93% ground turkey',6,'oz','P'],['pasta (dry)',3,'oz','S'],['marinara',0.75,'cup','S'],['parmesan',2,'tbsp','D']],
+  m:'Brown turkey, simmer with marinara, toss with pasta.'},
+ {id:'r_sheet',n:'Salmon & Potato Sheet Pan',t:['main'],p:40,c:45,f:18,
+  ing:[['salmon fillet',6,'oz','P'],['baby potatoes',8,'oz','V'],['broccoli',1.5,'cup','V'],['olive oil',1,'tbsp','S']],
+  m:'Roast potatoes 15 min at 425F, add salmon and broccoli, 12 more.'},
+ {id:'r_stir',n:'Shrimp Stir-Fry & Rice',t:['peri','main'],p:38,c:60,f:8,
+  ing:[['frozen shrimp',7,'oz','P'],['frozen stir-fry vegetables',2,'cup','V'],['white rice (cooked)',1.5,'cup','S'],['stir-fry sauce',2,'tbsp','S']],
+  m:'Hot pan: shrimp 3 min, veggies 4 min, sauce, serve on rice.'},
+ {id:'r_steak',n:'Steak, Rice & Asparagus',t:['main'],p:45,c:55,f:16,
+  ing:[['sirloin steak',6,'oz','P'],['white rice (cooked)',1.5,'cup','S'],['asparagus',1,'bunch','V'],['butter',0.5,'tbsp','D']],
+  m:'Sear steak 3-4 min/side, rest; saute asparagus in the pan.'},
+ {id:'r_ques',n:'Chicken Quesadilla',t:['main'],p:42,c:45,f:16,
+  ing:[['chicken breast',5,'oz','P'],['large tortillas',2,'','S'],['shredded cheese',0.5,'cup','D'],['salsa',0.25,'cup','S']],
+  m:'Fill tortillas with cooked chicken and cheese; crisp both sides.'},
+ {id:'r_chili',n:'One-Pot Turkey Chili',t:['main'],p:42,c:40,f:12,
+  ing:[['93% ground turkey',6,'oz','P'],['canned kidney beans',0.75,'cup','S'],['canned diced tomatoes',1,'cup','S'],['chili seasoning',1,'tbsp','S']],
+  m:'Brown turkey, dump everything in, simmer 15 min. Freezes great.'},
+ {id:'r_shake',n:'Whey Shake & Rice Cakes',t:['pre'],p:30,c:45,f:4,
+  ing:[['whey protein',1.25,'scoop','S'],['rice cakes',3,'','S'],['honey',1,'tbsp','S'],['banana',1,'','V']],
+  m:'Shake with water; rice cakes with a little honey. Fast-digesting pre-lift fuel.'},
+ {id:'r_smooth',n:'Fruit Protein Smoothie',t:['pre','bfast'],p:32,c:50,f:5,
+  ing:[['whey protein',1.25,'scoop','S'],['frozen mixed fruit',1.5,'cup','V'],['oat milk',1,'cup','D'],['oats',0.25,'cup','S']],
+  m:'Blend everything 45 seconds.'},
+ {id:'r_cott',n:'Cottage Cheese & Berries',t:['bed'],p:30,c:20,f:6,
+  ing:[['lowfat cottage cheese',1.25,'cup','D'],['mixed berries',0.75,'cup','V'],['almonds',0.5,'oz','S']],
+  m:'Bowl it. Slow-digesting casein protein feeds you overnight.'},
+ {id:'r_case',n:'Casein Pudding',t:['bed'],p:32,c:15,f:5,
+  ing:[['casein protein',1.25,'scoop','S'],['nonfat greek yogurt',0.5,'cup','D'],['peanut butter',0.5,'tbsp','S']],
+  m:'Stir casein into yogurt with a splash of milk until pudding-thick.'},
+];
+const MEAL_CATS={P:'Meat & Seafood',D:'Dairy & Eggs',V:'Produce & Frozen',S:'Pantry'};
+function recipeVid(r){return 'https://www.youtube.com/results?search_query='
+  +encodeURIComponent('easy high protein '+r.n+' recipe');}
+function mealSlots(){
+  const p=S.profile,d=dietCalc(p),pref=S.dietPrefs;
+  if(!d||!pref)return null;
+  const n=pref.meals;
+  const start={early:7,std:8.5,owl:10.5}[pref.window]||8.5;
+  const span=Math.min(13,3.5*(n-1));
+  const trainH={am:7.5,noon:12,pm:17.5}[pref.train]||17.5;
+  const slots=[];
+  for(let i=0;i<n;i++){
+    const h=start+(n>1?span*i/(n-1):0);
+    slots.push({h,label:i===0?'Breakfast':i===n-1?'Last meal':'Meal '+(i+1),
+      type:i===0?'bfast':i===n-1?'bed':'main',cw:1,fw:1.15});
+  }
+  // last meal defaults to low-carb/slow-protein…
+  slots[n-1].cw=0.6;slots[n-1].fw=1.2;
+  // …but peri-workout needs WIN if they collide with it (post-lift refuel first)
+  let pre=-1,post=-1;
+  slots.forEach((sl,i)=>{if(sl.h<=trainH)pre=i;});
+  if(pre>=0&&pre<n-1)post=pre+1;else if(pre===-1)post=0;
+  if(pre>=0){slots[pre].label+=' · Pre-workout';slots[pre].type='pre';slots[pre].cw=1.3;slots[pre].fw=0.5;}
+  if(post>=0){slots[post].label+=' · Post-workout';slots[post].type='peri';slots[post].cw=1.5;slots[post].fw=0.5;}
+  const cwT=slots.reduce((a,x)=>a+x.cw,0),fwT=slots.reduce((a,x)=>a+x.fw,0);
+  slots.forEach(sl=>{
+    sl.p=Math.round(d.protein/n);
+    sl.c=Math.round(d.carbs*sl.cw/cwT);
+    sl.f=Math.round(d.fat*sl.fw/fwT);
+    sl.kcal=sl.p*4+sl.c*4+sl.f*9;
+    sl.time=(function(h){const hh=Math.floor(h),mm=Math.round((h-hh)*60);
+      const ap=hh>=12?'PM':'AM';const h12=((hh+11)%12)+1;
+      return h12+':'+String(mm).padStart(2,'0')+' '+ap;})(sl.h);
+  });
+  return slots;
+}
+function slotRecipes(type){
+  const pool=RECIPES.filter(r=>r.t.includes(type));
+  return pool.length?pool:RECIPES.filter(r=>r.t.includes('main'));
+}
+function slotRecipe(i,type){
+  const pool=slotRecipes(type);
+  const sel=(S.mealSel&&S.mealSel[i])||0;
+  return {r:pool[sel%pool.length],pool};
+}
+function scaleQty(q,f){const v=q*f;return v>=10?Math.round(v):Math.round(v*4)/4;}
+function shoppingList(){
+  const slots=mealSlots();if(!slots)return null;
+  const agg={};
+  slots.forEach((sl,i)=>{
+    const {r}=slotRecipe(i,sl.type);
+    const f=sl.p/r.p;
+    r.ing.forEach(g=>{
+      const key=g[0]+'|'+g[2]+'|'+g[3];
+      agg[key]=(agg[key]||0)+g[1]*f*7; // 7 days
+    });
+  });
+  const byCat={};
+  Object.keys(agg).forEach(k=>{
+    const[name,unit,cat]=k.split('|');
+    (byCat[cat]=byCat[cat]||[]).push({name,unit,qty:scaleQty(agg[k],1)});
+  });
+  return byCat;
+}
+
 /* ---------- Diet coach ---------- */
 function diet(){
   const p=S.profile;
@@ -1335,6 +1453,61 @@ function diet(){
     <p class="xs mut" style="margin-top:8px">≈ <b class="num">${Math.round(d.protein/meals)}g protein per meal</b>, evenly spaced.
       Put a big chunk of your carbs in the meals before and after training. Last meal: slow protein (casein/cottage cheese/greek yogurt).</p>
   </div>
+  ${!S.dietPrefs?`<div class="card" style="border-color:var(--red)">
+    <div class="lbl" style="margin-bottom:6px">Build my meal plan</div>
+    <p class="sm mut" style="margin-bottom:10px">Two quick questions and the app turns your macros into an actual day of eating.</p>
+    <div class="lbl" style="margin-bottom:6px">When do you usually train?</div>
+    <div class="seg" style="margin-bottom:10px">${[['am','Morning'],['noon','Midday'],['pm','Evening']].map(x=>
+      `<button class="opt ${V.dp.train===x[0]?'on':''}" data-a="dpset:train:${x[0]}">${x[1]}</button>`).join('')}</div>
+    <div class="lbl" style="margin-bottom:6px">When do you like to start eating?</div>
+    <div class="seg" style="margin-bottom:10px">${[['early','Early bird'],['std','Standard'],['owl','Late riser']].map(x=>
+      `<button class="opt ${V.dp.window===x[0]?'on':''}" data-a="dpset:window:${x[0]}">${x[1]}</button>`).join('')}</div>
+    <p class="xs mut" style="margin-bottom:10px">Meals per day is taken from the selector above (${meals}).</p>
+    <button class="btn primary" data-a="dp_save">Generate My Meal Plan</button>
+  </div>`:(function(){
+    const slots=mealSlots();if(!slots)return '';
+    return `<div class="card">
+      <div class="row between" style="margin-bottom:8px">
+        <div class="lbl">Your day of eating</div>
+        <button class="btn small ghost" data-a="dp_edit">Adjust</button>
+      </div>
+      ${slots.map((sl,i)=>{
+        const {r,pool}=slotRecipe(i,sl.type);
+        const f=sl.p/r.p;
+        return `<div style="border-bottom:1px solid var(--line);padding:10px 0">
+          <div class="row between">
+            <span class="sm"><b>${sl.time}</b> · ${esc(sl.label)}</span>
+            <span class="xs mut num">${sl.p}P / ${sl.c}C / ${sl.f}F · ${sl.kcal} kcal</span>
+          </div>
+          <div class="row between" style="margin-top:6px">
+            <span class="sm grn">${esc(r.n)}</span>
+            <span class="row" style="gap:8px">
+              ${pool.length>1?`<button class="btn small ghost" data-a="mp_swap:${i}">🔀</button>`:''}
+              <a class="vlink" href="${recipeVid(r)}" target="_blank" rel="noopener">▶</a>
+            </span>
+          </div>
+          <details style="border:none;padding:4px 0 0">
+            <summary class="xs mut">portions &amp; how-to</summary>
+            <p class="xs mut" style="margin-top:6px">${r.ing.map(g=>scaleQty(g[1],f)+(g[2]?' '+g[2]:'')+' '+esc(g[0])).join(' · ')}</p>
+            <p class="xs dim" style="margin-top:4px">${esc(r.m)}</p>
+          </details>
+        </div>`;}).join('')}
+      <p class="xs dim" style="margin-top:8px">Portions are auto-scaled so every meal hits its protein target.
+      Carbs cluster around your training time; fat stays low right before and after lifting; the last meal leans
+      on slow-digesting protein.</p>
+    </div>
+    <div class="card">
+      <div class="row between" style="margin-bottom:6px">
+        <div class="lbl">Weekly shopping list</div>
+        <button class="btn small" data-a="shop_share">Share / copy</button>
+      </div>
+      ${(function(){const sh=shoppingList();if(!sh)return '';
+        return Object.keys(MEAL_CATS).filter(c=>sh[c]).map(c=>`
+          <div class="xs" style="margin-bottom:8px"><b class="mut">${MEAL_CATS[c]}</b><br>
+          ${sh[c].map(x=>scaleQty(x.qty,1)+(x.unit?' '+x.unit:'')+' '+esc(x.name)).join(' · ')}</div>`).join('');})()}
+      <p class="xs dim">Covers 7 days of this plan. Everything is standard stock at Costco (best for bulk
+      protein, rice, eggs and frozen produce), Ralphs, Trader Joe's or Sprouts.</p>
+    </div>`;})()}
   <div class="card" style="border-color:${trend===null?'var(--line)':inRange?'var(--grn)':'var(--amb)'}">
     <div class="lbl" style="margin-bottom:6px">Scale coach</div>
     <p class="sm">${coach}</p>
@@ -2116,8 +2289,21 @@ const A={
     if(V.pf.units!=='kg'&&+V.pf.ht){V.pf.htFt=String(Math.floor(V.pf.ht/12));V.pf.htIn=String(Math.round(V.pf.ht%12));}
     V.screen='profile';render();},
   dgoal:g=>{S.profile.goal=g;save();render();},
-  dmeals:n=>{S.profile.meals=+n;save();render();},
+  dmeals:n=>{S.profile.meals=+n;if(S.dietPrefs)S.dietPrefs.meals=+n;save();render();},
   libm:m=>{V.libm=m;render();},
+  dpset:arg=>{const i=arg.indexOf(':');V.dp[arg.slice(0,i)]=arg.slice(i+1);render();},
+  dp_save:()=>{S.dietPrefs={meals:(S.profile&&S.profile.meals)||4,train:V.dp.train,window:V.dp.window};
+    S.mealSel={};save();render();toast('Meal plan ready');},
+  dp_edit:()=>{V.dp={train:S.dietPrefs.train,window:S.dietPrefs.window};S.dietPrefs=null;saveQuiet();render();},
+  mp_swap:i=>{S.mealSel=S.mealSel||{};S.mealSel[i]=((S.mealSel[i]||0)+1);save();render();},
+  shop_share:async()=>{
+    const sh=shoppingList();if(!sh)return;
+    let txt='HYPERCOACH shopping list (1 week)\n';
+    Object.keys(MEAL_CATS).filter(c=>sh[c]).forEach(c=>{
+      txt+='\n'+MEAL_CATS[c]+':\n'+sh[c].map(x=>'- '+scaleQty(x.qty,1)+(x.unit?' '+x.unit:'')+' '+x.name).join('\n')+'\n';});
+    try{if(navigator.share){await navigator.share({text:txt,title:'Shopping list'});return;}}catch(e){}
+    try{await navigator.clipboard.writeText(txt);toast('Copied to clipboard');}
+    catch(e){toast('Could not copy');}},
   automatch:()=>{S.settings.autoMatch=S.settings.autoMatch===false?true:false;save();render();},
   drive_connect:()=>{
     if(!gClient){toast('Google sync not configured yet');return;}
