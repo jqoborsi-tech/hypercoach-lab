@@ -1429,17 +1429,34 @@ function setup(){
   }else{
     const tplKey=st.preset&&st.preset.startsWith('tpl:')?st.preset.slice(4):null;
     const tpl=tplKey?RPT.find(x=>x.key===tplKey):null;
-    body=`<h2 style="margin-bottom:4px">Your program</h2>
-    <p class="sm mut" style="margin-bottom:10px">Pick a ready-made program — every exercise is pre-prescribed.
-    Or fine-tune any slot below.</p>
-    ${(function(){const r=recProgram(S.profile);V._rec=r;return '';})()}
-    <div class="seg" style="margin-bottom:6px">${Object.keys(PRESETS).map(k=>
-      `<button class="opt ${st.preset===k?'on':''}" data-a="su_preset:${k}">${V._rec.preset===k?'⭐ ':''}${PRESETS[k].name}</button>`).join('')}</div>
-    <div class="lbl" style="margin:10px 0 6px">Coach programs (${st.daysKey}-day)</div>
-    <div class="seg" style="margin-bottom:6px">${RPT.filter(t=>t.days.length===st.daysKey).map(t=>
-      `<button class="opt ${tplKey===t.key?'on':''}" data-a="su_tpl:${t.key}">${V._rec.tpl===t.key?'⭐ ':''}${esc(t.name)}</button>`).join('')
-      ||'<span class="xs dim">No ready-made programs at this frequency — the presets above cover it.</span>'}</div>
-    <p class="xs mut" style="margin-bottom:14px">${esc(tpl?tpl.desc:(PRESETS[st.preset]?PRESETS[st.preset].desc:''))}</p>`
+    const rec=recProgram(S.profile);V._rec=rec;
+    const recTpl=rec.tpl?RPT.find(x=>x.key===rec.tpl):null;
+    const recName=recTpl?recTpl.name:(PRESETS[rec.preset]?PRESETS[rec.preset].name:'');
+    const recDesc=recTpl?recTpl.desc:(PRESETS[rec.preset]?PRESETS[rec.preset].desc:'');
+    const recSel=rec.tpl?tplKey===rec.tpl:st.preset===rec.preset;
+    const curName=tpl?tpl.name:(PRESETS[st.preset]?PRESETS[st.preset].name:'Custom');
+    body=`<h2 style="margin-bottom:10px">Your program</h2>
+    <div class="card" style="border-color:var(--red)">
+      <div class="lbl" style="margin-bottom:4px">⭐ Recommended for you</div>
+      <h2 style="margin-bottom:2px">${esc(recName)}</h2>
+      <p class="xs mut" style="margin-bottom:${recSel?'0':'10px'}">${esc(recDesc)}</p>
+      ${recSel?'':'<button class="btn small primary" data-a="su_rec">Use this program</button>'}
+      ${recSel?'<span class="chip grn" style="margin-top:8px">Selected ✓</span>':''}
+    </div>
+    <div class="card" style="padding:13px 16px">
+      <details>
+        <summary>Browse all programs &amp; styles${recSel?'':' · using: '+esc(curName)}</summary>
+        <div class="lbl" style="margin:12px 0 6px">Equipment styles</div>
+        <div class="seg" style="margin-bottom:6px">${Object.keys(PRESETS).map(k=>
+          `<button class="opt ${st.preset===k?'on':''}" data-a="su_preset:${k}">${PRESETS[k].name}</button>`).join('')}</div>
+        <div class="lbl" style="margin:10px 0 6px">Ready-made programs (${st.daysKey}-day)</div>
+        <div class="seg" style="margin-bottom:6px">${RPT.filter(t=>t.days.length===st.daysKey).map(t=>
+          `<button class="opt ${tplKey===t.key?'on':''}" data-a="su_tpl:${t.key}">${esc(t.name)}</button>`).join('')
+          ||'<span class="xs dim">No ready-made programs at this frequency — the styles above cover it.</span>'}</div>
+        <p class="xs mut">${esc(tpl?tpl.desc:(PRESETS[st.preset]?PRESETS[st.preset].desc:''))}</p>
+      </details>
+    </div>
+    <p class="sm mut" style="margin:4px 0 10px">Every exercise below is pre-set — swap any of them, or just hit Start.</p>`
     +st.days.map((d,di)=>`<div class="card">
       <div class="row between"><div class="lbl">Day ${di+1}</div></div>
       <h2 style="margin-bottom:6px">${esc(d.name)}</h2>
@@ -2120,6 +2137,8 @@ const A={
     (S.draft.sets[si]||[]).forEach(x=>{if(!x.done)x.w=sg?String(sg.w):'';});
     save();V.pick=null;V.libq='';V.screen='workout';render();
     toast('Swapped to '+EX[id].name+' for the rest of this meso');},
+  su_rec:()=>{const r=V._rec||recProgram(S.profile);
+    if(r.tpl)A.su_tpl(r.tpl);else A.su_preset(r.preset);},
   su_tpl:k=>{
     const t=RPT.find(x=>x.key===k);if(!t)return;
     V.setup.daysKey=t.days.length;V.setup.preset='tpl:'+k;
