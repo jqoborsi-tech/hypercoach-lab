@@ -1345,8 +1345,16 @@ const RECIPES=[
   m:'Stir casein into yogurt with a splash of milk until pudding-thick.'},
 ];
 const MEAL_CATS={P:'Meat & Seafood',D:'Dairy & Eggs',V:'Produce & Frozen',S:'Pantry'};
-function recipeVid(r){return 'https://www.youtube.com/results?search_query='
-  +encodeURIComponent('easy high protein '+r.n+' recipe');}
+/* Curated tutorials from big cooking/fitness-food creators — every URL
+   oEmbed-verified 2026-07-11. Fallback = YouTube search if missing. */
+const RVIDEOS={r_yog:'kvR-IVC_ojs',r_oats:'m-3SdAiq904',r_scram:'s9r-CxnCXkg',r_burr:'MTMQJwE4l0M',
+ r_tuna:'gGHlAdr23lM',r_pasta:'zXP3GHS7xyo',r_sheet:'PdqgZz5qnJc',r_stir:'No_ZNOq0axM',
+ r_steak:'AmC9SmCBUj4',r_ques:'iD6H6aAoSeg',r_chili:'1g7stN3Oy70',r_shake:'NWcIKbWK0Ko',
+ r_smooth:'IQp9rGYLTIY',r_cott:'ta9lWW1BOiA',r_case:'X6_XRKrlfYo'};
+function recipeVid(r){
+  if(RVIDEOS[r.id])return 'https://www.youtube.com/watch?v='+RVIDEOS[r.id];
+  return 'https://www.youtube.com/results?search_query='
+    +encodeURIComponent('easy high protein '+r.n+' recipe');}
 function mealSlots(){
   const p=S.profile,d=dietCalc(p),pref=S.dietPrefs;
   if(!d||!pref)return null;
