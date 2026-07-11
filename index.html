@@ -1392,16 +1392,20 @@ const RECIPES=[
   m:'Microwave sweet potato 6 min while the pan heats; sear steak 3-4 min per side, rest 3 min; slice against the grain, spoon chimichurri over, arugula alongside.'},
 ];
 const MEAL_CATS={P:'Meat & Seafood',D:'Dairy & Eggs',V:'Produce & Frozen',S:'Pantry'};
-/* Form videos: SHORT ONLY (every ID duration-audited ≤7 min, no timestamps
-   into long videos), Gordon Ramsay / F Word / Hell's Kitchen preferred per user.
-   All IDs oEmbed-verified 2026-07-11. Assembly recipes get the search fallback. */
+/* Form videos: EVERY recipe has a direct link — no search-result links.
+   All IDs duration-audited ≤8 min (no timestamps into long videos) and
+   oEmbed-verified 2026-07-11. Gordon Ramsay / F Word preferred per user.
+   The search fallback below only fires if an ID is ever deleted from YouTube. */
 const RVIDEOS={r_oats:'u0CV7uqqmu8',r_ovnoat:'m-3SdAiq904',r_scram:'yv64abAJvEA',
  r_burr:'LLJXizrNP84',r_pasta:'lV_GvYejYzY',r_sheet:'rR9wq5uN_q8',
  r_stir:'s8f752SdeAI',r_steak:'YIjWwZwlHQg',r_ques:'FSLlsQ-x4jU',
  r_chili:'ZJSUy0TBuoY',r_shake:'7xKg3_4bGLg',r_cott:'ta9lWW1BOiA',
  r_case:'X6_XRKrlfYo',r_tofu:'NPBlhPiUe1o',r_shak:'5nmAFmoTLZw',
  r_omel:'c7pAzpS0aSs',r_miso:'hhkTHfsl_iM',r_ahi:'9WtMXOSPUS4',
- r_chimi:'xvWrNpkk32Q'};
+ r_chimi:'xvWrNpkk32Q',r_yog:'51V_nT91Ji4',r_tuna:'fAQDl9lE7Ok',
+ r_smooth:'Ak4mVG2NS5A',r_pouch:'bES0cdB29XY',r_rotis:'J9hqtbFqiEo',
+ r_wrap:'RC8wD3F9LA8',r_caesar:'IGlWE4AFQ5Q',r_strips:'vuHkhXYRVwA',
+ r_eggs:'dg51LRrfWY0',r_bigshake:'FSCVgmLjjQI',r_beans:'U-YMN5Q2W-I'};
 function recipeVid(r){
   const e=RVIDEOS[r.id];
   if(e)return 'https://www.youtube.com/watch?v='+e;
