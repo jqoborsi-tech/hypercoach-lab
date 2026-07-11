@@ -1298,7 +1298,7 @@ function profile(){
    fat kept low peri-workout, slow protein last meal. Portions auto-scale so
    each meal hits its protein target. */
 const RECIPES=[
- {id:'r_yog',d:1,g:1,n:'Greek Yogurt Power Bowl',t:['bfast','bed'],p:35,c:45,f:8,
+ {id:'r_yog',d:1,g:1,z:1,n:'Greek Yogurt Power Bowl',t:['bfast','bed'],p:35,c:45,f:8,
   ing:[['nonfat greek yogurt',1.5,'cup','D'],['granola',0.5,'cup','S'],['mixed berries',1,'cup','V'],['honey',1,'tbsp','S']],
   m:'Layer yogurt, berries, granola; drizzle honey.'},
  {id:'r_oats',d:1,n:'Protein Oatmeal',t:['bfast'],p:35,c:55,f:9,
@@ -1310,7 +1310,7 @@ const RECIPES=[
  {id:'r_burr',mt:1,d:1,n:'Chicken Burrito Bowl',t:['peri','main'],p:45,c:65,f:12,
   ing:[['chicken breast',6,'oz','P'],['white rice (cooked)',1.5,'cup','S'],['black beans',0.5,'cup','S'],['salsa',0.25,'cup','S'],['shredded cheese',0.25,'cup','D']],
   m:'Dice and sear chicken; bowl with rice, beans, salsa, cheese.'},
- {id:'r_tuna',fs:1,n:'Tuna Rice Bowl',t:['peri','main'],p:40,c:60,f:6,
+ {id:'r_tuna',fs:1,z:1,n:'Tuna Rice Bowl',t:['peri','main'],p:40,c:60,f:6,
   ing:[['canned tuna',2,'can','P'],['white rice (cooked)',1.5,'cup','S'],['soy sauce',1,'tbsp','S'],['cucumber',0.5,'','V'],['sriracha mayo (light)',1,'tbsp','S']],
   m:'Mix tuna with sauce over warm rice; top cucumber.'},
  {id:'r_pasta',mt:1,g:1,d:1,n:'Ground Turkey Pasta',t:['main'],p:45,c:60,f:14,
@@ -1319,7 +1319,7 @@ const RECIPES=[
  {id:'r_sheet',fs:1,fx:1,n:'Salmon & Potato Sheet Pan',t:['main'],p:40,c:45,f:18,
   ing:[['salmon fillet',6,'oz','P'],['baby potatoes',8,'oz','V'],['broccoli',1.5,'cup','V'],['olive oil',1,'tbsp','S']],
   m:'Roast potatoes 15 min at 425F, add salmon and broccoli, 12 more.'},
- {id:'r_stir',fs:1,fx:1,n:'Shrimp Stir-Fry & Rice',t:['peri','main'],p:38,c:60,f:8,
+ {id:'r_stir',fs:1,n:'Shrimp Stir-Fry & Rice',t:['peri','main'],p:38,c:60,f:8,
   ing:[['frozen shrimp',7,'oz','P'],['frozen stir-fry vegetables',2,'cup','V'],['white rice (cooked)',1.5,'cup','S'],['stir-fry sauce',2,'tbsp','S']],
   m:'Hot pan: shrimp 3 min, veggies 4 min, sauce, serve on rice.'},
  {id:'r_steak',rm:1,d:1,fx:1,n:'Steak, Rice & Asparagus',t:['main'],p:45,c:55,f:16,
@@ -1328,16 +1328,16 @@ const RECIPES=[
  {id:'r_ques',mt:1,d:1,g:1,n:'Chicken Quesadilla',t:['main'],p:42,c:45,f:16,
   ing:[['chicken breast',5,'oz','P'],['large tortillas',2,'','S'],['shredded cheese',0.5,'cup','D'],['salsa',0.25,'cup','S']],
   m:'Fill tortillas with cooked chicken and cheese; crisp both sides.'},
- {id:'r_chili',mt:1,fx:1,n:'One-Pot Turkey Chili',t:['main'],p:42,c:40,f:12,
+ {id:'r_chili',mt:1,n:'One-Pot Turkey Chili',t:['main'],p:42,c:40,f:12,
   ing:[['93% ground turkey',6,'oz','P'],['canned kidney beans',0.75,'cup','S'],['canned diced tomatoes',1,'cup','S'],['chili seasoning',1,'tbsp','S']],
   m:'Brown turkey, dump everything in, simmer 15 min. Freezes great.'},
- {id:'r_shake',d:1,n:'Whey Shake & Rice Cakes',t:['pre'],p:30,c:45,f:4,
+ {id:'r_shake',d:1,z:1,n:'Whey Shake & Rice Cakes',t:['pre'],p:30,c:45,f:4,
   ing:[['whey protein',1.25,'scoop','S'],['rice cakes',3,'','S'],['honey',1,'tbsp','S'],['banana',1,'','V']],
   m:'Shake with water; rice cakes with a little honey. Fast-digesting pre-lift fuel.'},
- {id:'r_smooth',d:1,n:'Fruit Protein Smoothie',t:['pre','bfast'],p:32,c:50,f:5,
+ {id:'r_smooth',d:1,z:1,n:'Fruit Protein Smoothie',t:['pre','bfast'],p:32,c:50,f:5,
   ing:[['whey protein',1.25,'scoop','S'],['frozen mixed fruit',1.5,'cup','V'],['oat milk',1,'cup','D'],['oats',0.25,'cup','S']],
   m:'Blend everything 45 seconds.'},
- {id:'r_cott',d:1,n:'Cottage Cheese & Berries',t:['bed'],p:30,c:20,f:6,
+ {id:'r_cott',d:1,z:1,n:'Cottage Cheese & Berries',t:['bed'],p:30,c:20,f:6,
   ing:[['lowfat cottage cheese',1.25,'cup','D'],['mixed berries',0.75,'cup','V'],['almonds',0.5,'oz','S']],
   m:'Bowl it. Slow-digesting casein protein feeds you overnight.'},
  {id:'r_pouch',mt:1,n:'Chicken Pouch Rice Bowl',t:['peri','main'],p:40,c:50,f:5,z:1,
@@ -1367,26 +1367,44 @@ const RECIPES=[
  {id:'r_beans',n:'Bean & Rice Power Bowl',t:['peri','main'],p:28,c:70,f:12,d:1,z:1,
   ing:[['canned black beans',1,'cup','S'],['microwave rice',1,'cup','S'],['shredded cheese',0.33,'cup','D'],['salsa',0.25,'cup','S'],['greek yogurt (as sour cream)',0.25,'cup','D']],
   m:'Microwave beans and rice, top with cheese, salsa and yogurt.'},
- {id:'r_tofu',n:'Tofu Fried Rice',t:['main'],p:30,c:55,f:14,fx:1,
+ {id:'r_tofu',n:'Tofu Fried Rice',t:['main'],p:30,c:55,f:14,
   ing:[['extra-firm tofu',7,'oz','P'],['frozen rice',1.25,'cup','S'],['frozen stir-fry vegetables',1,'cup','V'],['eggs',1,'','D'],['soy sauce',1.5,'tbsp','S']],
   m:'Crisp cubed tofu in a hot pan, add veg, rice, egg, sauce.'},
- {id:'r_case',d:1,n:'Casein Pudding',t:['bed'],p:32,c:15,f:5,
+ {id:'r_case',d:1,z:1,n:'Casein Pudding',t:['bed'],p:32,c:15,f:5,
   ing:[['casein protein',1.25,'scoop','S'],['nonfat greek yogurt',0.5,'cup','D'],['peanut butter',0.5,'tbsp','S']],
   m:'Stir casein into yogurt with a splash of milk until pudding-thick.'},
+ /* Fancy tier — multi-step, extra healthy, extra tasty, premium ingredients.
+    Concepts adapted from ten-minute chef-style cooking; written in our own words. */
+ {id:'r_shak',d:1,g:1,fx:1,n:'Green Shakshuka',t:['bfast','main'],p:38,c:34,f:15,
+  ing:[['eggs',2,'','D'],['egg whites',4,'','D'],['kale (chopped)',1,'cup','V'],['zucchini (sliced)',0.75,'cup','V'],['frozen peas',0.5,'cup','V'],['nonfat greek yogurt',0.25,'cup','D'],['olive oil',1,'tsp','S'],['sourdough toast',1,'slice','S']],
+  m:'Soften kale, zucchini and peas in olive oil, season well; make wells, crack in eggs and whites, lid on 3 min until whites set; drizzle yogurt over, serve with toast.'},
+ {id:'r_omel',d:1,fx:1,n:'Mozzarella-Basil Omelette',t:['bfast','bed'],p:36,c:8,f:18,
+  ing:[['eggs',2,'','D'],['egg whites',4,'','D'],['part-skim mozzarella',1.5,'oz','D'],['asparagus spears',4,'','V'],['mushrooms (sliced)',0.5,'cup','V'],['olive oil',1,'tsp','S'],['fresh basil',4,'leaf','V']],
+  m:'Saute sliced asparagus and mushrooms first; whisk eggs frothy, cook 2 min, fold mozzarella into the middle; spoon the veg over, scatter basil.'},
+ {id:'r_miso',fs:1,fx:1,n:'Miso-Glazed Salmon Bowl',t:['peri','main'],p:42,c:55,f:14,
+  ing:[['salmon fillet',6,'oz','P'],['white miso paste',1,'tbsp','S'],['honey',1,'tsp','S'],['soy sauce',1,'tbsp','S'],['microwave jasmine rice',1,'cup','S'],['shelled edamame',0.5,'cup','V'],['cucumber',0.5,'','V']],
+  m:'Whisk miso, honey and soy into a glaze; brush salmon, sear 3 min skin-down, flip, glaze again, finish 2 min; serve over rice with edamame and cucumber.'},
+ {id:'r_ahi',fs:1,fx:1,n:'Seared Ahi Tuna Bowl',t:['peri','main'],p:44,c:50,f:12,
+  ing:[['ahi tuna steak',6,'oz','P'],['sesame seeds',1,'tsp','S'],['microwave jasmine rice',1,'cup','S'],['avocado',0.25,'','V'],['cucumber',0.5,'','V'],['soy sauce',1,'tbsp','S'],['sriracha mayo (light)',1,'tbsp','S']],
+  m:'Press tuna in sesame seeds, sear 60-90 sec per side in a screaming-hot pan — rare center; slice thin over rice, fan the avocado, drizzle both sauces.'},
+ {id:'r_chimi',rm:1,fx:1,n:'Chimichurri Steak & Sweet Potato',t:['main'],p:45,c:42,f:18,
+  ing:[['sirloin steak',6,'oz','P'],['sweet potato',8,'oz','V'],['chimichurri',1.5,'tbsp','S'],['arugula',2,'cup','V'],['olive oil',0.5,'tsp','S']],
+  m:'Microwave sweet potato 6 min while the pan heats; sear steak 3-4 min per side, rest 3 min; slice against the grain, spoon chimichurri over, arugula alongside.'},
 ];
 const MEAL_CATS={P:'Meat & Seafood',D:'Dairy & Eggs',V:'Produce & Frozen',S:'Pantry'};
-/* Curated tutorials from big cooking/fitness-food creators — every URL
-   oEmbed-verified 2026-07-11. Fallback = YouTube search if missing. */
-/* [videoId, startSeconds?] — short videos start at 0; long-but-great ones
-   deep-link to the creator's own chapter where prep begins. Audited 2026-07-11. */
-const RVIDEOS={r_yog:['kvR-IVC_ojs',29],r_oats:['m-3SdAiq904'],r_scram:['s9r-CxnCXkg'],
- r_burr:['LLJXizrNP84'],r_tuna:['gGHlAdr23lM',27],r_pasta:['BaMgz0OmopE'],
- r_sheet:['PdqgZz5qnJc',24],r_stir:['No_ZNOq0axM',32],r_steak:['AmC9SmCBUj4'],
- r_ques:['iD6H6aAoSeg',118],r_chili:['1g7stN3Oy70',43],r_shake:['7xKg3_4bGLg'],
- r_smooth:['lL-nXfqeYxY'],r_cott:['ta9lWW1BOiA'],r_case:['X6_XRKrlfYo']};
+/* Form videos: SHORT ONLY (every ID duration-audited ≤7 min, no timestamps
+   into long videos), Gordon Ramsay / F Word / Hell's Kitchen preferred per user.
+   All IDs oEmbed-verified 2026-07-11. Assembly recipes get the search fallback. */
+const RVIDEOS={r_oats:'u0CV7uqqmu8',r_ovnoat:'m-3SdAiq904',r_scram:'yv64abAJvEA',
+ r_burr:'LLJXizrNP84',r_pasta:'lV_GvYejYzY',r_sheet:'rR9wq5uN_q8',
+ r_stir:'s8f752SdeAI',r_steak:'YIjWwZwlHQg',r_ques:'FSLlsQ-x4jU',
+ r_chili:'ZJSUy0TBuoY',r_shake:'7xKg3_4bGLg',r_cott:'ta9lWW1BOiA',
+ r_case:'X6_XRKrlfYo',r_tofu:'NPBlhPiUe1o',r_shak:'5nmAFmoTLZw',
+ r_omel:'c7pAzpS0aSs',r_miso:'hhkTHfsl_iM',r_ahi:'9WtMXOSPUS4',
+ r_chimi:'xvWrNpkk32Q'};
 function recipeVid(r){
   const e=RVIDEOS[r.id];
-  if(e)return 'https://www.youtube.com/watch?v='+e[0]+(e[1]?'&t='+e[1]+'s':'');
+  if(e)return 'https://www.youtube.com/watch?v='+e;
   return 'https://www.youtube.com/results?search_query='
     +encodeURIComponent('easy high protein '+r.n+' recipe');}
 function mealSlots(){
@@ -1431,14 +1449,32 @@ function recipeAllowed(r){
   if(a.includes('nrm')&&r.rm)return false;
   return true;
 }
+/* 'No spicy' keeps every recipe but swaps the hot ingredient for a mild one —
+   applied wherever an ingredient name is shown (meal cards + shopping list). */
+const MILD_SUBS={'sriracha':'teriyaki sauce','sriracha mayo (light)':'light mayo',
+ 'salsa':'mild salsa','chili seasoning':'mild chili seasoning (no heat)',
+ 'chimichurri':'mild chimichurri (no chili flakes)'};
+function ingName(n){
+  const a=(S.dietPrefs&&S.dietPrefs.avoid)||[];
+  return (a.includes('mild')&&MILD_SUBS[n])||n;
+}
+/* Style is a hard tier, not a sort: busy = no-cook/5-min (z), fancy = multi-step
+   chef-level (fx), std = everything else. A slot only borrows from the next tier
+   when its own tier has fewer than 2 options (so the 🔀 swap always works). */
+function styleTier(r){return r.z?'busy':(r.fx?'fancy':'std');}
 function slotRecipes(type){
-  let pool=RECIPES.filter(r=>r.t.includes(type)&&recipeAllowed(r));
-  if(!pool.length)pool=RECIPES.filter(r=>recipeAllowed(r));
-  if(!pool.length)pool=RECIPES.filter(r=>r.t.includes(type));
+  let base=RECIPES.filter(r=>r.t.includes(type)&&recipeAllowed(r));
+  if(!base.length)base=RECIPES.filter(r=>recipeAllowed(r));
+  if(!base.length)base=RECIPES.filter(r=>r.t.includes(type));
   const style=(S.dietPrefs&&S.dietPrefs.style)||'std';
-  if(style==='busy')pool=pool.filter(r=>r.z).concat(pool.filter(r=>!r.z));
-  else if(style==='fancy')pool=pool.filter(r=>r.fx).concat(pool.filter(r=>!r.fx));
-  return pool;
+  const order={busy:['busy','std','fancy'],std:['std','busy','fancy'],
+    fancy:['fancy','std','busy']}[style]||['std','busy','fancy'];
+  let pool=[];
+  for(const tier of order){
+    if(pool.length>=2)break;
+    pool=pool.concat(base.filter(r=>styleTier(r)===tier));
+  }
+  return pool.length?pool:base;
 }
 function slotRecipe(i,type){
   const pool=slotRecipes(type);
@@ -1454,7 +1490,7 @@ function shoppingList(){
     const {r}=slotRecipe(i,sl.type);
     const f=sl.p/r.p;
     r.ing.forEach(g=>{
-      const key=g[0]+'|'+g[2]+'|'+g[3];
+      const key=ingName(g[0])+'|'+g[2]+'|'+g[3];
       agg[key]=(agg[key]||0)+g[1]*f*7; // 7 days
     });
   });
@@ -1520,10 +1556,13 @@ function diet(){
     <div class="seg" style="margin-bottom:10px">${[['early','Early bird'],['std','Standard'],['owl','Late riser']].map(x=>
       `<button class="opt ${V.dp.window===x[0]?'on':''}" data-a="dpset:window:${x[0]}">${x[1]}</button>`).join('')}</div>
     <div class="lbl" style="margin-bottom:6px">How should meals feel?</div>
-    <div class="seg" style="margin-bottom:10px">${[['busy','⚡ Busy professional'],['std','🍽 What&#39;s for dinner'],['fancy','✨ Make it fancy']].map(x=>
+    <div class="seg" style="margin-bottom:4px">${[['busy','⚡ Busy professional'],['std','🍽 What&#39;s for dinner'],['fancy','✨ Make it fancy']].map(x=>
       `<button class="opt ${(V.dp.style||'std')===x[0]?'on':''}" data-a="dpset:style:${x[0]}">${x[1]}</button>`).join('')}</div>
+    <p class="xs mut" style="margin-bottom:10px">${{busy:'Easy, fast, efficient — no-cook and 5-minute meals that still hit your macros.',
+      std:'Moderate effort — simple everyday cooking, one pan where possible.',
+      fancy:'Multi-step, extra healthy, extra tasty — chef-level plates with premium ingredients like ahi tuna, salmon and skirt steak.'}[V.dp.style||'std']}</p>
     <div class="lbl" style="margin-bottom:6px">Any restrictions? <span class="mut" style="text-transform:none">(tap all that apply)</span></div>
-    <div class="seg" style="margin-bottom:10px">${[['veg','Vegetarian'],['pesc','Pescatarian'],['df','Dairy-free'],['gf','Gluten-free'],['nrm','No red meat']].map(x=>
+    <div class="seg" style="margin-bottom:10px">${[['veg','Vegetarian'],['pesc','Pescatarian'],['df','Dairy-free'],['gf','Gluten-free'],['nrm','No red meat'],['mild','No spicy']].map(x=>
       `<button class="opt ${(V.dp.avoid||[]).includes(x[0])?'on':''}" data-a="dpavoid:${x[0]}">${x[1]}</button>`).join('')}</div>
     <p class="xs mut" style="margin-bottom:10px">Meals per day is taken from the selector above (${meals}).</p>
     <button class="btn primary" data-a="dp_save">Generate My Meal Plan</button>
@@ -1543,7 +1582,7 @@ function diet(){
             <span class="xs mut num">${sl.p}P / ${sl.c}C / ${sl.f}F · ${sl.kcal} kcal</span>
           </div>
           <div class="row between" style="margin-top:6px">
-            <span class="sm grn">${esc(r.n)}${r.z?' <span class="chip" style="font-size:.6rem">⚡ no-cook</span>':''}</span>
+            <span class="sm grn">${esc(r.n)}${r.z?' <span class="chip" style="font-size:.6rem">⚡ no-cook</span>':r.fx?' <span class="chip" style="font-size:.6rem">✨ chef</span>':''}</span>
             <span class="row" style="gap:8px">
               ${pool.length>1?`<button class="btn small ghost" data-a="mp_swap:${i}">🔀</button>`:''}
               <a class="vlink" href="${recipeVid(r)}" target="_blank" rel="noopener">▶</a>
@@ -1551,7 +1590,7 @@ function diet(){
           </div>
           <details style="border:none;padding:4px 0 0">
             <summary class="xs mut">portions &amp; how-to</summary>
-            <p class="xs mut" style="margin-top:6px">${r.ing.map(g=>scaleQty(g[1],f)+(g[2]?' '+g[2]:'')+' '+esc(g[0])).join(' · ')}</p>
+            <p class="xs mut" style="margin-top:6px">${r.ing.map(g=>scaleQty(g[1],f)+(g[2]?' '+g[2]:'')+' '+esc(ingName(g[0]))).join(' · ')}</p>
             <p class="xs dim" style="margin-top:4px">${esc(r.m)}</p>
           </details>
         </div>`;}).join('')}
