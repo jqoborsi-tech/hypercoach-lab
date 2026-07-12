@@ -1409,23 +1409,25 @@ const RECIPES=[
 ];
 const MEAL_CATS={P:'Meat & Seafood',D:'Dairy & Eggs',V:'Produce & Frozen',S:'Pantry'};
 /* Form videos: EVERY recipe has a direct link — no search-result links.
-   All IDs duration-audited ≤8 min (no timestamps into long videos) and
-   oEmbed-verified 2026-07-11. Gordon Ramsay / F Word preferred per user.
-   One exception to the length cap: r_shak = Ramsay's own 10:41 companion
-   video for the exact book recipe the meal is adapted from.
+   TOP CHEFS ONLY for anything cooked (Ramsay/F Word, Jamie Oliver, Jacques
+   Pépin, Chef John, José Andrés, Jet Tila); fitness/home creators allowed
+   only on basic assembly items (shakes, yogurt/cottage bowls, wraps, frozen
+   reheats) where no top-chef video exists. All IDs oEmbed-verified
+   2026-07-11. Length: short preferred, >10 min OK when the match is right
+   (e.g. r_shak = Ramsay's exact 10:41 companion video for the book recipe).
    The search fallback below only fires if an ID is ever deleted from YouTube. */
-const RVIDEOS={r_oats:'u0CV7uqqmu8',r_ovnoat:'m-3SdAiq904',r_scram:'yv64abAJvEA',
- r_burr:'LLJXizrNP84',r_pasta:'lV_GvYejYzY',r_sheet:'FEyGxIy8CsM',
+const RVIDEOS={r_oats:'hXdfWJbFnqA',r_ovnoat:'mMIwWFi1LJg',r_scram:'yv64abAJvEA',
+ r_burr:'xJfWSGZFUvQ',r_pasta:'lV_GvYejYzY',r_sheet:'rR9wq5uN_q8',
  r_stir:'s8f752SdeAI',r_steak:'KmjWKRJZtQQ',r_ques:'FSLlsQ-x4jU',
  r_chili:'ZJSUy0TBuoY',r_shake:'7xKg3_4bGLg',r_cott:'ta9lWW1BOiA',
- r_case:'X6_XRKrlfYo',r_tofu:'tt7noqhkwng',r_shak:'s73qMhFGo14',
+ r_case:'X6_XRKrlfYo',r_tofu:'NPBlhPiUe1o',r_shak:'s73qMhFGo14',
  r_omel:'R_L1w3DAcnU',r_miso:'hhkTHfsl_iM',r_ahi:'9WtMXOSPUS4',
- r_tort:'5Pl9yV7iFWw',r_shrimp:'nP0G5_yxams',
- r_chimi:'xvWrNpkk32Q',r_yog:'51V_nT91Ji4',r_tuna:'fAQDl9lE7Ok',
+ r_tort:'z37aGYoz6L0',r_shrimp:'nP0G5_yxams',
+ r_chimi:'xvWrNpkk32Q',r_yog:'51V_nT91Ji4',r_tuna:'gGHlAdr23lM',
  r_smooth:'Ak4mVG2NS5A',r_pouch:'bES0cdB29XY',r_rotis:'J9hqtbFqiEo',
  r_wrap:'RC8wD3F9LA8',r_caesar:'IGlWE4AFQ5Q',r_strips:'iAUBphDjVek',
- r_eggs:'dg51LRrfWY0',r_bigshake:'FSCVgmLjjQI',r_beans:'U-YMN5Q2W-I',
- r_afchx:'LHvUkNf6myc',r_afturk:'9pbJUn2y6Aw',r_afthigh:'7QMwZCvECdE'};
+ r_eggs:'Mw-5pQBbZvA',r_bigshake:'FSCVgmLjjQI',r_beans:'YVxASSr6B_Q',
+ r_afchx:'bGDLBIeM_5g',r_afturk:'9pbJUn2y6Aw',r_afthigh:'hqbzI8L0i8o'};
 function recipeVid(r){
   const e=RVIDEOS[r.id];
   if(e)return 'https://www.youtube.com/watch?v='+e;
