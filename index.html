@@ -10,9 +10,9 @@
 <body>
 <style>
   :root{
-    --bg:#141216; --card:#1e1b20; --card2:#26222b; --line:#2e2a33;
-    --ink:#f1edf2; --mut:#9a919f; --dim:#6d6572;
-    --red:#e5484d; --red-soft:#3a2226;
+    --bg:#0b0b0d; --card:#151518; --card2:#202024; --line:#26262b;
+    --ink:#f4f4f5; --mut:#a1a1aa; --dim:#71717a;
+    --red:#d92c2c; --red-soft:#38191b;
     --grn:#4fb477; --grn-soft:#1e3328;
     --amb:#d9942b; --amb-soft:#37301c;
     --blu:#6aa3d9;
@@ -23,7 +23,7 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     line-height:1.45;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
   #app{max-width:520px;margin:0 auto;padding:16px 14px 0}
-  h1{font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
+  h1{font-size:1.7rem;font-weight:800;letter-spacing:-.02em}
   h2{font-size:1.05rem;font-weight:700;letter-spacing:-.01em}
   .lbl{font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--mut)}
   .mut{color:var(--mut)} .dim{color:var(--dim)} .sm{font-size:.85rem} .xs{font-size:.75rem}
@@ -37,16 +37,17 @@
   .btn{display:block;width:100%;border:none;border-radius:14px;padding:15px;font-size:1.02rem;
     font-weight:700;font-family:inherit;cursor:pointer;text-align:center;color:var(--ink);background:var(--card2)}
   .btn:active{transform:scale(.985)}
-  .btn.primary{background:var(--red);color:#fff}
+  .btn.primary{background:var(--red);color:#fff;border-radius:999px}
   .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--mut)}
-  .btn.small{width:auto;padding:9px 14px;font-size:.85rem;border-radius:10px}
+  .btn.small{width:auto;padding:9px 14px;font-size:.85rem;border-radius:99px}
   .btn:disabled{opacity:.35;pointer-events:none}
   .btn.danger{background:var(--red-soft);color:var(--red)}
   a.btn{text-decoration:none;line-height:1.2}
   .vlink{color:var(--red);text-decoration:none;font-size:.8rem;font-weight:700;
     padding:4px 8px;border:1px solid var(--line);border-radius:8px;white-space:nowrap}
-  .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;
-    font-size:.72rem;font-weight:700;letter-spacing:.04em;background:var(--card2);color:var(--mut)}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;
+    font-size:.72rem;font-weight:700;letter-spacing:.04em;background:var(--card2);color:#d4d4d8}
+  .mdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;flex:0 0 auto}
   .chip.red{background:var(--red-soft);color:var(--red)}
   .chip.grn{background:var(--grn-soft);color:var(--grn)}
   .chip.amb{background:var(--amb-soft);color:var(--amb)}
@@ -58,8 +59,7 @@
   .seg{display:flex;gap:8px;flex-wrap:wrap}
   .opt{flex:1 1 auto;min-width:70px;padding:12px 8px;border-radius:12px;border:1px solid var(--line);
     background:var(--card);color:var(--mut);font-size:.85rem;font-weight:600;text-align:center;cursor:pointer;font-family:inherit}
-  .opt.on{background:var(--red-soft);border-color:var(--red);color:var(--ink);
-    box-shadow:0 0 0 1px var(--red) inset}
+  .opt.on{background:#d8d8dc;border-color:#d8d8dc;color:#131316;box-shadow:none}
   .opt:active{transform:scale(.98)}
   input.in,select.sel{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;
     color:var(--ink);font-size:1rem;font-family:inherit;padding:12px;outline:none;
@@ -71,13 +71,13 @@
   .chk{height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--dim);
     font-size:1.2rem;cursor:pointer;font-family:inherit}
   .chk.on{background:var(--grn-soft);border-color:var(--grn);color:var(--grn)}
-  .tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(24,21,26,.97);
+  .tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,13,15,.97);
     border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:40;
     backdrop-filter:blur(12px)}
   .tabs button{flex:1;background:none;border:none;color:var(--dim);font-family:inherit;font-size:.68rem;
     font-weight:700;letter-spacing:.05em;padding:7px 2px;cursor:pointer;border-radius:10px}
   .tabs button .ic{display:block;font-size:1.25rem;margin-bottom:2px}
-  .tabs button.on{color:var(--red)}
+  .tabs button.on{color:var(--ink)}
   #timerbar{position:fixed;bottom:calc(64px + env(safe-area-inset-bottom));left:10px;right:10px;z-index:39;
     background:var(--card2);border:1px solid var(--red);border-radius:14px;padding:10px 16px;display:none;
     align-items:center;justify-content:space-between;box-shadow:0 6px 24px rgba(0,0,0,.5)}
@@ -90,7 +90,7 @@
   .weekchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px}
   .weekchips .wc{flex:0 0 auto;padding:8px 14px;border-radius:10px;border:1px solid var(--line);
     background:var(--card);color:var(--mut);font-weight:700;font-size:.85rem;cursor:pointer;font-family:inherit}
-  .weekchips .wc.on{background:var(--red-soft);border-color:var(--red);color:var(--ink)}
+  .weekchips .wc.on{background:#d8d8dc;border-color:#d8d8dc;color:#131316}
   .slotline{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);gap:8px}
   .slotline:last-child{border-bottom:none}
   .fbq{margin-bottom:18px}
@@ -142,6 +142,13 @@ const MUSCLES={
   calves:     {name:'Calves',     mv:4, start:6, mav:14, mrv:20},
   abs:        {name:'Abs',        mv:0, start:4, mav:16, mrv:25},
 };
+/* Per-muscle accent colors: pull = blues, push = pinks/magentas,
+   legs = greens, abs = purple, calves = teal. */
+const MCOLOR={chest:'#ec4899',delts:'#f472b6',rear_delts:'#fb7185',triceps:'#e879a9',
+  back:'#38bdf8',biceps:'#818cf8',quads:'#10b981',hams:'#34d399',glutes:'#22c55e',
+  calves:'#2dd4bf',abs:'#a78bfa'};
+function mdot(m){const c=MCOLOR[m];return c?`<span class="mdot" style="background:${c}"></span>`:'';}
+function mtint(m){const c=MCOLOR[m];return c?`style="color:${c}"`:'';}
 
 /* ---------- Profile placement ----------
    Questionnaire -> program adjustments. Experience and age scale the volume
@@ -1211,7 +1218,7 @@ function library(){
   <p class="xs dim" style="margin-bottom:10px">● = in your quick swap menus; everything is available via
   ⇄ Replace during a workout. Tap ▶ for the form video.</p>`}
   ${groups.filter(m=>byM[m]).map(m=>`<div class="card">
-    <div class="lbl" style="margin-bottom:6px">${groupName(m)}</div>
+    <div class="lbl" style="margin-bottom:6px">${mdot(m)} ${groupName(m)}</div>
     ${byM[m].map(x=>{
       const cue=x.id?CUES[x.id]:null;
       const url=x.id?vidUrl(x.id):'https://www.youtube.com/results?search_query='
@@ -1826,7 +1833,7 @@ function startVolPreview(st){
   return Object.keys(counts).map(m=>{
     const t=pm[m]||'G',L=LM(m);
     const v=t==='E'?L.restart+2:t==='M'?Math.max(2,L.mv||2):L.restart;
-    return `${MUSCLES[m].name} <b class="num">${v}</b>${t==='E'?' <span class="red">▲</span>':t==='M'?' <span class="dim">—</span>':''}`;
+    return `${mdot(m)} ${MUSCLES[m].name} <b class="num">${v}</b>${t==='E'?' <span class="red">▲</span>':t==='M'?' <span class="dim">—</span>':''}`;
   }).join(' · ')||'—';
 }
 
@@ -1884,7 +1891,7 @@ function volBars(w){
     const pc=Math.min(100,100*v/L.mrv);
     const color=v>=L.mrv?'var(--red)':v>L.mav?'var(--amb)':'var(--grn)';
     return `<div class="vol"><div class="row between">
-      <span class="sm">${L.name}${(M.prioMap&&M.prioMap[m])==='E'?' <span class="red xs">▲</span>':(M.prioMap&&M.prioMap[m])==='M'?' <span class="dim xs">—</span>':''}</span>
+      <span class="sm">${mdot(m)} ${L.name}${(M.prioMap&&M.prioMap[m])==='E'?' <span class="red xs">▲</span>':(M.prioMap&&M.prioMap[m])==='M'?' <span class="dim xs">—</span>':''}</span>
       <span class="xs mut num">${v} sets · MRV ${L.mrv}</span></div>
       <div class="track"><div class="fill" style="width:${pc}%;background:${color}"></div>
       <div class="tick" style="left:${100*L.start/L.mrv}%"></div></div></div>`;
@@ -1942,7 +1949,7 @@ function workout(){
     const rr=repRange(ex);
     return `<div class="card">
       <div class="row between" style="margin-bottom:2px">
-        <span class="chip">${MUSCLES[s.m].name}${cue&&cue.t?' · '+cue.t:''}</span>
+        <span class="chip">${mdot(s.m)}<span ${mtint(s.m)}>${MUSCLES[s.m].name}</span>${cue&&cue.t?' · '+cue.t:''}</span>
         <span class="xs mut num">${doneCt}/${sets.length} sets</span>
       </div>
       <div class="row" style="margin:6px 0 2px">
@@ -2023,7 +2030,7 @@ function feedback(){
   const ready=['pump','vol'].every(k=>a[k]!==undefined);
   return header()+`
   <div class="xs dim" style="margin-bottom:10px">Recovery check · ${fb.idx+1} of ${fb.list.length}</div>
-  <h1 style="margin-bottom:16px">${name}</h1>`
+  <h1 style="margin-bottom:16px">${mdot(m)} ${name}</h1>`
   +FBQ.map(Q=>`<div class="fbq">
     <div class="sm" style="margin-bottom:8px;font-weight:600">${Q.q(name)}</div>
     <div class="seg">${Q.opts.map((o,i)=>
@@ -2043,7 +2050,7 @@ function summary(){
   </div>
   ${ch.length?`<div class="card"><div class="lbl" style="margin-bottom:10px">Next week (same day)</div>
     ${ch.map(c=>`<div class="row between" style="padding:6px 0">
-      <span class="sm">${MUSCLES[c.m].name}</span>
+      <span class="sm">${mdot(c.m)} ${MUSCLES[c.m].name}</span>
       <span class="sm num ${c.to>c.from?'grn':c.to<c.from?'red':'mut'}">
         ${c.from} → ${c.to} sets ${c.to>c.from?'▲':c.to<c.from?'▼':'—'}</span>
     </div>`).join('')}</div>`
