@@ -1316,15 +1316,15 @@ const RECIPES=[
  {id:'r_pasta',mt:1,g:1,d:1,n:'Ground Turkey Pasta',t:['main'],p:45,c:60,f:14,
   ing:[['93% ground turkey',6,'oz','P'],['pasta (dry)',3,'oz','S'],['marinara',0.75,'cup','S'],['parmesan',2,'tbsp','D']],
   m:'Brown turkey, simmer with marinara, toss with pasta.'},
- {id:'r_sheet',fs:1,fx:1,n:'Salmon & Potato Sheet Pan',t:['main'],p:40,c:45,f:18,
+ {id:'r_sheet',fs:1,fx:1,af:1,n:'Air Fryer Salmon & Potatoes',t:['main'],p:40,c:45,f:18,
   ing:[['salmon fillet',6,'oz','P'],['baby potatoes',8,'oz','V'],['broccoli',1.5,'cup','V'],['olive oil',1,'tbsp','S']],
-  m:'Roast potatoes 15 min at 425F, add salmon and broccoli, 12 more.'},
+  m:'Toss halved potatoes with oil, air-fry 400°F for 12 min; add salmon and broccoli, 8-10 min more until the salmon flakes.'},
  {id:'r_stir',fs:1,n:'Shrimp Stir-Fry & Rice',t:['peri','main'],p:38,c:60,f:8,
   ing:[['frozen shrimp',7,'oz','P'],['frozen stir-fry vegetables',2,'cup','V'],['white rice (cooked)',1.5,'cup','S'],['stir-fry sauce',2,'tbsp','S']],
   m:'Hot pan: shrimp 3 min, veggies 4 min, sauce, serve on rice.'},
- {id:'r_steak',rm:1,d:1,fx:1,n:'Steak, Rice & Asparagus',t:['main'],p:45,c:55,f:16,
+ {id:'r_steak',rm:1,d:1,fx:1,af:1,n:'Steak, Rice & Asparagus',t:['main'],p:45,c:55,f:16,
   ing:[['sirloin steak',6,'oz','P'],['white rice (cooked)',1.5,'cup','S'],['asparagus',1,'bunch','V'],['butter',0.5,'tbsp','D']],
-  m:'Sear steak 3-4 min/side, rest; saute asparagus in the pan.'},
+  m:'Air-fry the steak at 400°F, 8-10 min for medium-rare, flipping halfway; rest 3 min under the butter. Asparagus goes in the basket for the last 6.'},
  {id:'r_ques',mt:1,d:1,g:1,n:'Chicken Quesadilla',t:['main'],p:42,c:45,f:16,
   ing:[['chicken breast',5,'oz','P'],['large tortillas',2,'','S'],['shredded cheese',0.5,'cup','D'],['salsa',0.25,'cup','S']],
   m:'Fill tortillas with cooked chicken and cheese; crisp both sides.'},
@@ -1355,9 +1355,9 @@ const RECIPES=[
  {id:'r_caesar',mt:1,d:1,n:'Chicken Caesar Salad Kit',t:['main','bed'],p:45,c:15,f:18,z:1,
   ing:[['caesar salad kit',0.5,'bag','V'],['rotisserie chicken',6,'oz','P']],
   m:'Open bag, add pulled chicken, toss with the included dressing.'},
- {id:'r_strips',mt:1,n:'Frozen Chicken Strips Bowl',t:['peri','main'],p:38,c:55,f:7,z:1,
+ {id:'r_strips',mt:1,z:1,af:1,n:'Frozen Chicken Strips Bowl',t:['peri','main'],p:38,c:55,f:7,
   ing:[['frozen grilled chicken strips',6,'oz','P'],['frozen rice',1.25,'cup','S'],['frozen stir-fry vegetables',1,'cup','V'],['teriyaki sauce',1,'tbsp','S']],
-  m:'Everything from the freezer into the microwave. Four minutes.'},
+  m:'Strips straight from the freezer into the air fryer, 10 min at 400°F — way crispier than the microwave. Rice and veg in the microwave meanwhile; toss with sauce.'},
  {id:'r_eggs',d:1,n:'Boiled Eggs & Fruit Plate',t:['bfast','bed'],p:26,c:25,f:16,z:1,
   ing:[['pre-peeled hard-boiled eggs',3,'','D'],['string cheese',1,'','D'],['apple',1,'','V']],
   m:'Costco sells the eggs already boiled and peeled. Assemble, done.'},
@@ -1367,9 +1367,9 @@ const RECIPES=[
  {id:'r_beans',n:'Bean & Rice Power Bowl',t:['peri','main'],p:28,c:70,f:12,d:1,z:1,
   ing:[['canned black beans',1,'cup','S'],['microwave rice',1,'cup','S'],['shredded cheese',0.33,'cup','D'],['salsa',0.25,'cup','S'],['greek yogurt (as sour cream)',0.25,'cup','D']],
   m:'Microwave beans and rice, top with cheese, salsa and yogurt.'},
- {id:'r_tofu',n:'Tofu Fried Rice',t:['main'],p:30,c:55,f:14,
+ {id:'r_tofu',af:1,n:'Tofu Fried Rice',t:['main'],p:30,c:55,f:14,
   ing:[['extra-firm tofu',7,'oz','P'],['frozen rice',1.25,'cup','S'],['frozen stir-fry vegetables',1,'cup','V'],['eggs',1,'','D'],['soy sauce',1.5,'tbsp','S']],
-  m:'Crisp cubed tofu in a hot pan, add veg, rice, egg, sauce.'},
+  m:'Crisp cubed tofu in the air fryer, 12 min at 400°F; meanwhile pan-fry the rice, veg and egg with soy, then toss the tofu through.'},
  {id:'r_case',d:1,z:1,n:'Casein Pudding',t:['bed'],p:32,c:15,f:5,
   ing:[['casein protein',1.25,'scoop','S'],['nonfat greek yogurt',0.5,'cup','D'],['peanut butter',0.5,'tbsp','S']],
   m:'Stir casein into yogurt with a splash of milk until pudding-thick.'},
@@ -1395,7 +1395,17 @@ const RECIPES=[
   m:'Press tuna in sesame seeds, sear 60-90 sec per side in a screaming-hot pan — rare center; slice thin over rice, fan the avocado, drizzle both sauces.'},
  {id:'r_chimi',rm:1,fx:1,n:'Chimichurri Steak & Sweet Potato',t:['main'],p:45,c:42,f:18,
   ing:[['sirloin steak',6,'oz','P'],['sweet potato',8,'oz','V'],['chimichurri',1.5,'tbsp','S'],['arugula',2,'cup','V'],['olive oil',0.5,'tsp','S']],
-  m:'Microwave sweet potato 6 min while the pan heats; sear steak 3-4 min per side, rest 3 min; slice against the grain, spoon chimichurri over, arugula alongside.'},
+  m:'Air-fry sweet potato wedges 15 min at 400°F while the steak sears 3-4 min per side; rest 3 min, slice against the grain, spoon chimichurri over, arugula alongside.'},
+ /* Air-fryer mains — the household's primary appliance. */
+ {id:'r_afchx',mt:1,af:1,n:'Air Fryer Chicken & Rice Bowl',t:['peri','main'],p:45,c:50,f:8,
+  ing:[['chicken breast',6,'oz','P'],['microwave jasmine rice',1.25,'cup','S'],['broccoli florets',1.5,'cup','V'],['olive oil',1,'tsp','S'],['garlic-herb seasoning',1,'tsp','S']],
+  m:'Rub chicken with oil and seasoning; air-fry 380°F 16-18 min, flipping halfway, until 160°F — rest 3 min. Broccoli joins the basket for the last 6. Slice over rice.'},
+ {id:'r_afturk',mt:1,g:1,af:1,n:'Air Fryer Turkey Burgers',t:['main'],p:45,c:35,f:15,
+  ing:[['93% ground turkey',6,'oz','P'],['burger buns',1.5,'','S'],['lettuce',2,'leaf','V'],['tomato (sliced)',0.5,'','V'],['worcestershire sauce',1,'tsp','S']],
+  m:'Season turkey with worcestershire, salt and pepper; form patties and air-fry 375°F 12-14 min, flipping once, to 165°F. Stack on toasted buns with lettuce and tomato.'},
+ {id:'r_afthigh',mt:1,af:1,n:'Air Fryer Chicken Thighs & Sweet Potato',t:['main'],p:42,c:36,f:16,
+  ing:[['boneless skinless chicken thighs',6,'oz','P'],['sweet potato (cubed)',8,'oz','V'],['olive oil',1,'tsp','S'],['smoked paprika + garlic powder',1,'tsp','S']],
+  m:'Toss sweet potato cubes with half the oil, start 10 min at 400°F; push aside, add seasoned thighs and cook 18 min more, flipping once, until 175°F.'},
 ];
 const MEAL_CATS={P:'Meat & Seafood',D:'Dairy & Eggs',V:'Produce & Frozen',S:'Pantry'};
 /* Form videos: EVERY recipe has a direct link — no search-result links.
@@ -1405,16 +1415,17 @@ const MEAL_CATS={P:'Meat & Seafood',D:'Dairy & Eggs',V:'Produce & Frozen',S:'Pan
    video for the exact book recipe the meal is adapted from.
    The search fallback below only fires if an ID is ever deleted from YouTube. */
 const RVIDEOS={r_oats:'u0CV7uqqmu8',r_ovnoat:'m-3SdAiq904',r_scram:'yv64abAJvEA',
- r_burr:'LLJXizrNP84',r_pasta:'lV_GvYejYzY',r_sheet:'rR9wq5uN_q8',
- r_stir:'s8f752SdeAI',r_steak:'YIjWwZwlHQg',r_ques:'FSLlsQ-x4jU',
+ r_burr:'LLJXizrNP84',r_pasta:'lV_GvYejYzY',r_sheet:'FEyGxIy8CsM',
+ r_stir:'s8f752SdeAI',r_steak:'KmjWKRJZtQQ',r_ques:'FSLlsQ-x4jU',
  r_chili:'ZJSUy0TBuoY',r_shake:'7xKg3_4bGLg',r_cott:'ta9lWW1BOiA',
- r_case:'X6_XRKrlfYo',r_tofu:'NPBlhPiUe1o',r_shak:'s73qMhFGo14',
+ r_case:'X6_XRKrlfYo',r_tofu:'tt7noqhkwng',r_shak:'s73qMhFGo14',
  r_omel:'R_L1w3DAcnU',r_miso:'hhkTHfsl_iM',r_ahi:'9WtMXOSPUS4',
  r_tort:'5Pl9yV7iFWw',r_shrimp:'nP0G5_yxams',
  r_chimi:'xvWrNpkk32Q',r_yog:'51V_nT91Ji4',r_tuna:'fAQDl9lE7Ok',
  r_smooth:'Ak4mVG2NS5A',r_pouch:'bES0cdB29XY',r_rotis:'J9hqtbFqiEo',
- r_wrap:'RC8wD3F9LA8',r_caesar:'IGlWE4AFQ5Q',r_strips:'vuHkhXYRVwA',
- r_eggs:'dg51LRrfWY0',r_bigshake:'FSCVgmLjjQI',r_beans:'U-YMN5Q2W-I'};
+ r_wrap:'RC8wD3F9LA8',r_caesar:'IGlWE4AFQ5Q',r_strips:'iAUBphDjVek',
+ r_eggs:'dg51LRrfWY0',r_bigshake:'FSCVgmLjjQI',r_beans:'U-YMN5Q2W-I',
+ r_afchx:'LHvUkNf6myc',r_afturk:'9pbJUn2y6Aw',r_afthigh:'7QMwZCvECdE'};
 function recipeVid(r){
   const e=RVIDEOS[r.id];
   if(e)return 'https://www.youtube.com/watch?v='+e;
@@ -1595,7 +1606,7 @@ function diet(){
             <span class="xs mut num">${sl.p}P / ${sl.c}C / ${sl.f}F · ${sl.kcal} kcal</span>
           </div>
           <div class="row between" style="margin-top:6px">
-            <span class="sm grn">${esc(r.n)}${r.z?' <span class="chip" style="font-size:.6rem">⚡ no-cook</span>':r.fx?' <span class="chip" style="font-size:.6rem">✨ chef</span>':''}</span>
+            <span class="sm grn">${esc(r.n)}${r.z?' <span class="chip" style="font-size:.6rem">⚡ no-cook</span>':''}${r.fx?' <span class="chip" style="font-size:.6rem">✨ chef</span>':''}${r.af?' <span class="chip" style="font-size:.6rem">🌀 air fryer</span>':''}</span>
             <span class="row" style="gap:8px">
               ${pool.length>1?`<button class="btn small ghost" data-a="mp_swap:${i}">🔀</button>`:''}
               <a class="vlink" href="${recipeVid(r)}" target="_blank" rel="noopener">▶</a>
