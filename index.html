@@ -1486,16 +1486,26 @@ function ingName(n){
 }
 /* Style is a hard tier, not a sort: busy = no-cook/5-min (z), fancy = multi-step
    chef-level (fx), std = everything else. A slot only borrows from the next tier
-   when its own tier has fewer than 2 options (so the 🔀 swap always works). */
+   when its own tier has fewer than 2 options (so the 🔀 swap always works).
+   'af' cuts across tiers: it takes every air-fryer recipe (af flag) first,
+   then falls back busy → std → fancy for slots the air fryer can't cover. */
 function styleTier(r){return r.z?'busy':(r.fx?'fancy':'std');}
 function slotRecipes(type){
   let base=RECIPES.filter(r=>r.t.includes(type)&&recipeAllowed(r));
   if(!base.length)base=RECIPES.filter(r=>recipeAllowed(r));
   if(!base.length)base=RECIPES.filter(r=>r.t.includes(type));
   const style=(S.dietPrefs&&S.dietPrefs.style)||'std';
+  let pool=[];
+  if(style==='af'){
+    pool=base.filter(r=>r.af);
+    for(const tier of ['busy','std','fancy']){
+      if(pool.length>=2)break;
+      pool=pool.concat(base.filter(r=>!r.af&&styleTier(r)===tier));
+    }
+    return pool.length?pool:base;
+  }
   const order={busy:['busy','std','fancy'],std:['std','busy','fancy'],
     fancy:['fancy','std','busy']}[style]||['std','busy','fancy'];
-  let pool=[];
   for(const tier of order){
     if(pool.length>=2)break;
     pool=pool.concat(base.filter(r=>styleTier(r)===tier));
@@ -1582,9 +1592,10 @@ function diet(){
     <div class="seg" style="margin-bottom:10px">${[['early','Early bird'],['std','Standard'],['owl','Late riser']].map(x=>
       `<button class="opt ${V.dp.window===x[0]?'on':''}" data-a="dpset:window:${x[0]}">${x[1]}</button>`).join('')}</div>
     <div class="lbl" style="margin-bottom:6px">How should meals feel?</div>
-    <div class="seg" style="margin-bottom:4px">${[['busy','⚡ Busy professional'],['std','🍽 What&#39;s for dinner'],['fancy','✨ Make it fancy']].map(x=>
+    <div class="seg" style="margin-bottom:4px">${[['busy','⚡ Busy professional'],['af','🌀 Air-fry'],['std','🍽 What&#39;s for dinner'],['fancy','✨ Make it fancy']].map(x=>
       `<button class="opt ${(V.dp.style||'std')===x[0]?'on':''}" data-a="dpset:style:${x[0]}">${x[1]}</button>`).join('')}</div>
     <p class="xs mut" style="margin-bottom:10px">${{busy:'Easy, fast, efficient — no-cook and 5-minute meals that still hit your macros.',
+      af:'Everything goes through the air fryer — crispy, hands-off, easy cleanup. Meals that can&#39;t be air-fried (shakes, yogurt bowls) fall back to quick options.',
       std:'Moderate effort — simple everyday cooking, one pan where possible.',
       fancy:'Multi-step, extra healthy, extra tasty — chef-level plates with premium ingredients like ahi tuna, salmon and skirt steak.'}[V.dp.style||'std']}</p>
     <div class="lbl" style="margin-bottom:6px">Any restrictions? <span class="mut" style="text-transform:none">(tap all that apply)</span></div>
