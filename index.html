@@ -1381,6 +1381,12 @@ const RECIPES=[
  {id:'r_omel',d:1,fx:1,n:'Mozzarella-Basil Omelette',t:['bfast','bed'],p:36,c:8,f:18,
   ing:[['eggs',2,'','D'],['egg whites',4,'','D'],['part-skim mozzarella',1.5,'oz','D'],['asparagus spears',4,'','V'],['mushrooms (sliced)',0.5,'cup','V'],['olive oil',1,'tsp','S'],['fresh basil',4,'leaf','V']],
   m:'Saute sliced asparagus and mushrooms first; whisk eggs frothy, cook 2 min, fold mozzarella into the middle; spoon the veg over, scatter basil.'},
+ {id:'r_tort',d:1,n:'Crisp Spanish Tortilla',t:['bfast','main'],p:36,c:18,f:22,
+  ing:[['eggs',2,'','D'],['egg whites',4,'','D'],['roasted red peppers (jarred)',3.5,'oz','V'],['paprika or plain potato chips',0.75,'oz','S'],['shredded mozzarella',0.25,'cup','D'],['goat cheese',0.5,'oz','D'],['thyme leaves',1,'tsp','V']],
+  m:'The chef shortcut: chips stand in for slow-cooked potato. Whisk eggs, fold in chopped peppers, chips and mozzarella; cook 2 min, flip with a plate, 2 min more; crumble goat cheese over.'},
+ {id:'r_shrimp',fs:1,d:1,fx:1,n:'Shrimp & Feta Omelette',t:['bfast','bed'],p:42,c:4,f:18,
+  ing:[['cooked baby shrimp',3,'oz','P'],['eggs',2,'','D'],['egg whites',4,'','D'],['feta',0.75,'oz','D'],['scallions (sliced)',2,'','V'],['olive oil',1,'tsp','S'],['lime',0.5,'','V'],['cilantro or dill',1,'tbsp','V']],
+  m:'Soften scallions in oil, warm the shrimp 1 min; pour in whisked eggs, cook 2 min, crumble feta over and fold; squeeze lime, scatter herbs.'},
  {id:'r_miso',fs:1,fx:1,n:'Miso-Glazed Salmon Bowl',t:['peri','main'],p:42,c:55,f:14,
   ing:[['salmon fillet',6,'oz','P'],['white miso paste',1,'tbsp','S'],['honey',1,'tsp','S'],['soy sauce',1,'tbsp','S'],['microwave jasmine rice',1,'cup','S'],['shelled edamame',0.5,'cup','V'],['cucumber',0.5,'','V']],
   m:'Whisk miso, honey and soy into a glaze; brush salmon, sear 3 min skin-down, flip, glaze again, finish 2 min; serve over rice with edamame and cucumber.'},
@@ -1395,13 +1401,16 @@ const MEAL_CATS={P:'Meat & Seafood',D:'Dairy & Eggs',V:'Produce & Frozen',S:'Pan
 /* Form videos: EVERY recipe has a direct link — no search-result links.
    All IDs duration-audited ≤8 min (no timestamps into long videos) and
    oEmbed-verified 2026-07-11. Gordon Ramsay / F Word preferred per user.
+   One exception to the length cap: r_shak = Ramsay's own 10:41 companion
+   video for the exact book recipe the meal is adapted from.
    The search fallback below only fires if an ID is ever deleted from YouTube. */
 const RVIDEOS={r_oats:'u0CV7uqqmu8',r_ovnoat:'m-3SdAiq904',r_scram:'yv64abAJvEA',
  r_burr:'LLJXizrNP84',r_pasta:'lV_GvYejYzY',r_sheet:'rR9wq5uN_q8',
  r_stir:'s8f752SdeAI',r_steak:'YIjWwZwlHQg',r_ques:'FSLlsQ-x4jU',
  r_chili:'ZJSUy0TBuoY',r_shake:'7xKg3_4bGLg',r_cott:'ta9lWW1BOiA',
- r_case:'X6_XRKrlfYo',r_tofu:'NPBlhPiUe1o',r_shak:'5nmAFmoTLZw',
- r_omel:'c7pAzpS0aSs',r_miso:'hhkTHfsl_iM',r_ahi:'9WtMXOSPUS4',
+ r_case:'X6_XRKrlfYo',r_tofu:'NPBlhPiUe1o',r_shak:'s73qMhFGo14',
+ r_omel:'R_L1w3DAcnU',r_miso:'hhkTHfsl_iM',r_ahi:'9WtMXOSPUS4',
+ r_tort:'5Pl9yV7iFWw',r_shrimp:'nP0G5_yxams',
  r_chimi:'xvWrNpkk32Q',r_yog:'51V_nT91Ji4',r_tuna:'fAQDl9lE7Ok',
  r_smooth:'Ak4mVG2NS5A',r_pouch:'bES0cdB29XY',r_rotis:'J9hqtbFqiEo',
  r_wrap:'RC8wD3F9LA8',r_caesar:'IGlWE4AFQ5Q',r_strips:'vuHkhXYRVwA',
