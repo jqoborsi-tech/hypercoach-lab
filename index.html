@@ -48,6 +48,8 @@
   .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;
     font-size:.72rem;font-weight:700;letter-spacing:.04em;background:var(--card2);color:#d4d4d8}
   .mdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;flex:0 0 auto}
+  .wkprog{height:6px;background:var(--card2);border-radius:4px;overflow:hidden;margin:0 2px 14px}
+  .wkprog .fill{height:100%;background:var(--grn);border-radius:4px;transition:width .5s ease}
   .chip.red{background:var(--red-soft);color:var(--red)}
   .chip.grn{background:var(--grn-soft);color:var(--grn)}
   .chip.amb{background:var(--amb-soft);color:var(--amb)}
@@ -130,18 +132,60 @@ const LS='hypercoach2_v1';
 /* ---------- Volume landmarks (sets/muscle/week) ----------
    start = conservative MEV where each meso begins.           */
 const MUSCLES={
-  chest:      {name:'Chest',      mv:4, start:6, mav:14, mrv:22},
-  back:       {name:'Back',       mv:6, start:8, mav:16, mrv:25},
-  delts:      {name:'Shoulders',  mv:4, start:6, mav:16, mrv:26},
-  rear_delts: {name:'Rear Delts', mv:0, start:4, mav:12, mrv:22},
-  biceps:     {name:'Biceps',     mv:4, start:6, mav:14, mrv:26},
-  triceps:    {name:'Triceps',    mv:4, start:5, mav:12, mrv:18},
-  quads:      {name:'Quads',      mv:4, start:6, mav:14, mrv:20},
-  hams:       {name:'Hamstrings', mv:3, start:4, mav:12, mrv:20},
-  glutes:     {name:'Glutes',     mv:0, start:4, mav:10, mrv:16},
-  calves:     {name:'Calves',     mv:4, start:6, mav:14, mrv:20},
-  abs:        {name:'Abs',        mv:0, start:4, mav:16, mrv:25},
+  chest:      {name:'Chest',      mv:4, start:6, mav:14, mrv:22, rec:48},
+  back:       {name:'Back',       mv:6, start:8, mav:16, mrv:25, rec:48},
+  delts:      {name:'Shoulders',  mv:4, start:6, mav:16, mrv:26, rec:36},
+  rear_delts: {name:'Rear Delts', mv:0, start:4, mav:12, mrv:22, rec:24},
+  biceps:     {name:'Biceps',     mv:4, start:6, mav:14, mrv:26, rec:36},
+  triceps:    {name:'Triceps',    mv:4, start:5, mav:12, mrv:18, rec:48},
+  quads:      {name:'Quads',      mv:4, start:6, mav:14, mrv:20, rec:72},
+  hams:       {name:'Hamstrings', mv:3, start:4, mav:12, mrv:20, rec:72},
+  glutes:     {name:'Glutes',     mv:0, start:4, mav:10, mrv:16, rec:48},
+  calves:     {name:'Calves',     mv:4, start:6, mav:14, mrv:20, rec:36},
+  abs:        {name:'Abs',        mv:0, start:4, mav:16, mrv:25, rec:24},
 };
+/* rec = baseline hours until the muscle is ready to be trained hard again,
+   from the recovery literature: damage + soreness resolve in ~1 day for small,
+   fast-recovering muscles (abs, rear delts), ~1.5-2 days for most upper-body
+   muscles, and ~3 days for the big lower-body movers (quads, hamstrings) where
+   long-length loading (squats, RDLs) causes the most disruption. The timer
+   scales with how much you actually did: a big session (8+ sets on a muscle)
+   needs ~25% longer; a light touch (≤3 sets) ~25% less. */
+function recHours(m,sets){
+  const base=(MUSCLES[m]&&MUSCLES[m].rec)||48;
+  return Math.round(base*(sets>=8?1.25:sets<=3?0.75:1));
+}
+function muscleRecovery(m){
+  const L=(S.recLog||{})[m];
+  if(!L)return null;                       // never logged -> fully ready
+  const need=recHours(m,L.sets||4),elapsed=(Date.now()-L.t)/36e5;
+  return {need,elapsed,left:Math.max(0,need-elapsed)};
+}
+function fmtHrs(h){return h>=24?(Math.round(h/12)/2)+'d':Math.ceil(h)+'h';}
+function dayReadiness(di){
+  const M=S.meso,ms=[...new Set(M.days[di].slots.map(s=>s.m))];
+  const blocks=[];
+  ms.forEach(m=>{const r=muscleRecovery(m);if(r&&r.left>0.5)blocks.push({m,left:r.left});});
+  blocks.sort((a,b)=>b.left-a.left);
+  return {ready:!blocks.length,blocks,score:blocks.reduce((a,x)=>a+x.left,0)};
+}
+function flexUndone(){
+  const M=S.meso;
+  return M.days.map((_,i)=>i).filter(i=>!(M.flexDone||{})[i]);
+}
+function recommendDay(){
+  const undone=flexUndone();
+  if(!undone.length)return 0;
+  const scored=undone.map(i=>({i,r:dayReadiness(i)}));
+  const ready=scored.filter(x=>x.r.ready);
+  if(ready.length)return ready[0].i;       // first fully-recovered day in plan order
+  scored.sort((a,b)=>a.r.score-b.r.score); // else the least-blocked one
+  return scored[0].i;
+}
+function weekDoneCount(){
+  const M=S.meso;
+  return M.flex?Object.keys(M.flexDone||{}).length:M.cursor.d;
+}
 /* Per-muscle accent colors: pull = blues, push = pinks/magentas,
    legs = greens, abs = purple, calves = teal. */
 const MCOLOR={chest:'#ec4899',delts:'#f472b6',rear_delts:'#fb7185',triceps:'#e879a9',
@@ -1105,10 +1149,23 @@ function completeDay(fbAns){
   M.log[w+'_'+d]={date:today(),entries,fb:fbAns,perfDown:downCt,perfScored:scored};
   S.workoutsSinceBackup=(S.workoutsSinceBackup||0)+1;
   V.lastChanges=applyProgression(w,d,fbAns);
+  // start each trained muscle's recovery timer (drives flexible scheduling)
+  const setsByM={};
+  entries.forEach(e=>{setsByM[e.m]=(setsByM[e.m]||0)+e.sets.length;});
+  S.recLog=S.recLog||{};
+  Object.keys(setsByM).forEach(m=>{S.recLog[m]={t:Date.now(),sets:setsByM[m]};});
   // advance
-  M.cursor.d++;
-  if(M.cursor.d>=M.daysPerWeek){M.cursor.d=0;M.cursor.w++;}
-  if(M.cursor.w>M.weeks)M.done=true;
+  if(M.flex){
+    M.flexDone=M.flexDone||{};M.flexDone[d]=1;
+    if(Object.keys(M.flexDone).length>=M.daysPerWeek){
+      M.flexDone={};M.cursor.d=0;M.cursor.w++;
+    }else M.cursor.d=recommendDay();
+    if(M.cursor.w>M.weeks)M.done=true;
+  }else{
+    M.cursor.d++;
+    if(M.cursor.d>=M.daysPerWeek){M.cursor.d=0;M.cursor.w++;}
+    if(M.cursor.w>M.weeks)M.done=true;
+  }
   S.draft=null;save();
   // Drive sync moment: refresh the Google token now if needed (brief app-switch
   // flash is acceptable ONLY here, right after finishing)
@@ -1122,9 +1179,17 @@ function skipDay(){
   const M=S.meso,{w,d}=M.cursor;
   if(w+1<M.weeks&&!M.plan[(w+1)+'_'+d])M.plan[(w+1)+'_'+d]=targetsFor(w,d);
   M.log[w+'_'+d]={date:today(),skipped:true};
-  M.cursor.d++;
-  if(M.cursor.d>=M.daysPerWeek){M.cursor.d=0;M.cursor.w++;}
-  if(M.cursor.w>M.weeks)M.done=true;
+  if(M.flex){
+    M.flexDone=M.flexDone||{};M.flexDone[d]=1;
+    if(Object.keys(M.flexDone).length>=M.daysPerWeek){
+      M.flexDone={};M.cursor.d=0;M.cursor.w++;
+    }else M.cursor.d=recommendDay();
+    if(M.cursor.w>M.weeks)M.done=true;
+  }else{
+    M.cursor.d++;
+    if(M.cursor.d>=M.daysPerWeek){M.cursor.d=0;M.cursor.w++;}
+    if(M.cursor.w>M.weeks)M.done=true;
+  }
   S.draft=null;save();render();
 }
 
@@ -1845,11 +1910,59 @@ function home(){
   const deload=w>=M.weeks,rir=rirFor(w,M.weeks);
   const day=M.days[d],tg=targetsFor(w,d);
   const totalSets=tg.reduce((a,b)=>a+b,0);
-  const resume=S.draft&&S.draft.w===w&&S.draft.d===d;
-  return header()+`
+  const resume=S.draft&&S.draft.w===w&&(M.flex?true:S.draft.d===d);
+  const doneCt=weekDoneCount();
+  const prog=`
+  <div class="row between" style="margin:0 2px 4px">
+    <span class="lbl">Week ${w} of ${M.weeks}</span>
+    <span class="row" style="gap:8px">
+      <span class="xs mut num">${doneCt}/${M.daysPerWeek} logged</span>
+      <button class="btn small ghost" style="padding:5px 10px;font-size:.72rem" data-a="flex_toggle">${M.flex?'🔀 Flexible':'📅 Fixed'}</button>
+    </span>
+  </div>
+  <div class="wkprog"><div class="fill" style="width:${Math.round(100*doneCt/M.daysPerWeek)}%"></div></div>`;
+  if(M.flex){
+    const rec=recommendDay();
+    const cards=M.days.map((dy,i)=>{
+      const done=(M.flexDone||{})[i];
+      const r=dayReadiness(i);
+      const ms=[...new Set(dy.slots.map(s=>s.m))];
+      const isRec=i===rec&&!done;
+      const isDraft=S.draft&&S.draft.w===w&&S.draft.d===i;
+      const status=done?'<span class="xs grn">✓ Logged this week</span>'
+        :r.ready?'<span class="xs grn">✅ All muscles recovered</span>'
+        :`<span class="xs amb">🕐 ${r.blocks.slice(0,2).map(b=>MUSCLES[b.m].name+' ~'+fmtHrs(b.left)).join(' · ')}</span>`;
+      return `<div class="card" style="${done?'opacity:.45':''};${isRec?'border-color:var(--grn)':''}">
+        <div class="row between">
+          <div style="flex:1;min-width:0">
+            <div class="row" style="gap:6px;margin-bottom:3px">
+              ${isRec?'<span class="chip grn" style="font-size:.6rem">RECOMMENDED</span>':''}
+              ${isDraft?'<span class="chip amb" style="font-size:.6rem">IN PROGRESS</span>':''}
+            </div>
+            <h2 style="margin-bottom:3px">${esc(dy.name)}</h2>
+            <div class="row wrap" style="gap:4px;margin-bottom:4px">${ms.map(m=>`<span class="xs" style="color:${MCOLOR[m]||'var(--mut)'}">${mdot(m)}${MUSCLES[m].name}</span>`).join(' ')}</div>
+            ${status}
+          </div>
+          ${done?'':`<button class="btn small ${isRec||isDraft?'':'ghost'}" style="${isRec||isDraft?'background:var(--red);color:#fff':''}" data-a="flex_start:${i}">${isDraft?'Resume':r.ready?'Start':'Start anyway'}</button>`}
+        </div>
+      </div>`;}).join('');
+    return header()+prog+`
+    ${deload?`<div class="card" style="border-color:var(--blu);padding:12px 16px"><span class="sm"><b>Deload week</b> — any order, light and easy.</span></div>`:''}
+    ${cards}
+    <details class="card" style="border-bottom:1px solid var(--line)">
+      <summary class="sm">How the recovery timers work</summary>
+      <p class="xs mut" style="margin-top:8px">Each muscle gets a timer when you log it, based on how long it
+      typically needs before hard training helps again: big lower-body muscles ~3 days (quads, hamstrings),
+      most upper-body ~1.5–2 days (chest, back, triceps, glutes), fast recoverers ~1–1.5 days (shoulders,
+      biceps, calves, rear delts, abs). A big session on a muscle (8+ sets) adds ~25%; a light one (≤3 sets)
+      trims ~25%. Days with every muscle off the clock are marked recovered — train those first. "Start anyway"
+      is always there: timers are estimates, your body has the final vote.</p>
+    </details>` + homeCards(M,deload);
+  }
+  return header()+prog+`
   <div class="card" style="border-color:${deload?'var(--blu)':'var(--red)'}">
     <div class="row between" style="margin-bottom:6px">
-      <span class="lbl">Week ${w} of ${M.weeks} · Day ${d+1} of ${M.daysPerWeek}</span>
+      <span class="lbl">Day ${d+1} of ${M.daysPerWeek}</span>
       ${deload?`<span class="chip" style="background:#1d2836;color:var(--blu)">DELOAD</span>`
         :`<span class="chip red">${rir} RIR</span>`}
     </div>
@@ -1859,6 +1972,11 @@ function home(){
     <button class="btn primary" data-a="start_workout">${resume?'Resume Workout':'Start Workout'}</button>
     <button class="btn ghost" style="margin-top:8px" data-a="skip_day">Skip this day</button>
   </div>
+  ` + homeCards(M,deload);
+}
+function homeCards(M,deload){
+  const w=M.cursor.w;
+  return `
   ${driveOn()&&V.driveNeeds?`<div class="card" style="padding:12px 16px;border-color:var(--blu)">
     <div class="row between">
       <span class="sm">☁️ Drive sync needs a quick re-login</span>
@@ -2397,6 +2515,22 @@ const A={
     S.draft=null;save();V.setup=null;V.screen='home';render();toast('Mesocycle created');},
   start_workout:beginWorkout,
   skip_day:()=>{if(confirm('Skip this day? Its plan rolls to next week unchanged.'))skipDay();},
+  flex_start:i=>{const M=S.meso;
+    // abandon a different day's half-done draft only with consent
+    if(S.draft&&!(S.draft.w===M.cursor.w&&S.draft.d===+i)
+      &&!confirm('You have another workout in progress — discard it and start this one?'))return;
+    if(S.draft&&!(S.draft.w===M.cursor.w&&S.draft.d===+i))S.draft=null;
+    M.cursor.d=+i;save();beginWorkout();},
+  flex_toggle:()=>{const M=S.meso;
+    if(M.flex){ // back to fixed: resume at first not-yet-done day this week
+      const undone=flexUndone();M.cursor.d=undone.length?undone[0]:0;M.flex=false;
+      toast('Fixed weekly order');
+    }else{
+      M.flex=true;M.flexDone=M.flexDone||{};
+      for(let i=0;i<M.cursor.d;i++)M.flexDone[i]=1; // days already done this week count
+      toast('Flexible scheduling on');
+    }
+    save();render();},
   chk:arg=>{const[si,xi]=arg.split(':').map(Number);
     const x=S.draft.sets[si][xi];x.done=!x.done;save();
     if(x.done){const ex=EX[S.draft.ex[si]];
