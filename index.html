@@ -2053,10 +2053,17 @@ function workout(){
       <p class="xs dim" style="margin-top:6px">Feeling rushed, stressed, or under-slept? Warm up <b>more</b>, not less — that's when injuries happen.</p>
     </details>
   </div>`;
-  return `<div class="row between" style="margin:4px 2px 12px">
+  const allSets=Object.values(D.sets).map(a=>a||[]).reduce((a,b)=>a.concat(b),[]);
+  const setsDone=allSets.filter(x=>x.done).length,setsTotal=allSets.length||1;
+  return `<div class="row between" style="margin:4px 2px 8px">
     <div><div class="lbl">Week ${w} · ${esc(day.name)}</div>
     <h1>${deload?'Deload':rir+' RIR target'}</h1></div>
-    <button class="btn small ghost" data-a="nav:home">Close</button></div>`
+    <button class="btn small ghost" data-a="nav:home">Close</button></div>
+  <div class="row between" style="margin:0 2px 4px">
+    <span class="xs mut">Workout progress</span>
+    <span class="xs num ${setsDone>=setsTotal?'grn':'mut'}">${setsDone}/${setsTotal} sets</span>
+  </div>
+  <div class="wkprog"><div class="fill" style="width:${Math.round(100*setsDone/setsTotal)}%"></div></div>`
   +note+principle+warmup
   +day.slots.map((s,si)=>{
     const ex=EX[D.ex[si]]||EX[s.ex];
