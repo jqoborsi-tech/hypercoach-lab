@@ -110,6 +110,7 @@
     border:1px solid var(--grn);color:var(--grn);padding:10px 18px;border-radius:12px;font-weight:700;
     font-size:.9rem;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
   .toast.show{opacity:1}
+  .toast.err{background:var(--red-soft);border-color:var(--red);color:var(--red)}
   @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -967,8 +968,20 @@ const today=()=>new Date().toISOString().slice(0,10);
 const r25=x=>Math.round(x/2.5)*2.5;
 const e1rm=(w,r)=>r>0?(w>0?w*(1+r/30):r):0;
 const unit=()=>S.settings.units;
-function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2200);}
+function toast(msg,isErr){const t=$('#toast');t.textContent=msg;
+  t.classList.toggle('err',!!isErr);t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),isErr?3200:2200);}
+
+/* Typo guard: an absurd entry (2500 lb instead of 25) would poison the
+   progression targets and the est-1RM fatigue trend, so refuse it at the
+   checkmark instead of letting it into the data. */
+function setInputError(exId,w,r){
+  const kg=S.profile&&S.profile.units==='kg';
+  if(!(r>0))return 'Enter reps before checking the set';
+  if(r>50)return 'Too many reps entered — double-check that number';
+  if(w>(kg?700:1500))return 'Weight too high — double-check that number';
+  return null;
+}
 
 /* ---------- RIR schedule ----------
    Accumulation ramps 3 RIR -> 0 RIR; final week = deload (4+). */
@@ -2539,7 +2552,15 @@ const A={
     }
     save();render();},
   chk:arg=>{const[si,xi]=arg.split(':').map(Number);
-    const x=S.draft.sets[si][xi];x.done=!x.done;save();
+    const x=S.draft.sets[si][xi];
+    if(!x.done){ // sanity-check before logging — protect the algorithm from typos
+      const err=setInputError(S.draft.ex[si],+x.w,+x.r);
+      if(err){toast(err,true);return;}
+      const lp=S.lastPerf[S.draft.ex[si]],kg=S.profile&&S.profile.units==='kg';
+      if(lp&&lp.w>=(kg?10:20)&&+x.w>=3*lp.w
+        &&!confirm(x.w+' '+(kg?'kg':'lb')+' is way above your last '+lp.w+' on this lift — log it anyway?'))return;
+    }
+    x.done=!x.done;save();
     if(x.done){const ex=EX[S.draft.ex[si]];
       startTimer(ex&&ex.big?S.settings.restBig:S.settings.restSmall);}
     render();},
@@ -2706,7 +2727,7 @@ document.addEventListener('change',e=>{ // auto-match: apply new weight to later
   (S.draft.sets[si]||[]).forEach((x,i)=>{
     if(i>xi&&!x.done&&(x.w===ov||x.w==='')){x.w=nv;changed++;}
   });
-  if(changed){save();render();toast('Weight applied to '+changed+' more set'+(changed>1?'s':''));}
+  if(changed){save();render();} // silent — matching later sets is expected behavior
 });
 
 /* resume mid-workout after reload */
