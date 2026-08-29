@@ -935,7 +935,7 @@ async function drivePush(){
         {method:'POST',headers:{'Content-Type':'multipart/related; boundary='+bnd},body:mp});
       const d=await r.json();if(d.id){S.drive.fileId=d.id;}
     }
-    S.drive.lastSync=Date.now();saveQuiet();
+    S.drive.lastSync=Date.now();S.drive.dirty=0;saveQuiet();
     if(V.screen==='more')render();
   }catch(e){}finally{gBusy=false;}
 }
@@ -1176,11 +1176,11 @@ function completeDay(fbAns){
     if(M.cursor.w>M.weeks)M.done=true;
   }
   S.draft=null;save();
-  // Drive sync moment: refresh the Google token now if needed (brief app-switch
-  // flash is acceptable ONLY here, right after finishing)
-  if(DRIVE.clientId&&S.drive&&S.drive.connected&&!driveToken()&&gClient){
-    try{gClient.requestAccessToken({prompt:''});}catch(e){}
-  }
+  // NEVER auto-open the Google token screen (the flash annoyed the user).
+  // With a live token the push above already ran silently; without one we
+  // just count the unsynced workout — Today shows a quiet one-tap Sync card
+  // once it actually matters.
+  if(driveOn()&&!driveToken()){S.drive.dirty=(S.drive.dirty||0)+1;saveQuiet();}
   V.screen='summary';V.fb=null;render();
 }
 function skipDay(){
@@ -1985,10 +1985,10 @@ function home(){
 function homeCards(M,deload){
   const w=M.cursor.w;
   return `
-  ${driveOn()&&V.driveNeeds?`<div class="card" style="padding:12px 16px;border-color:var(--blu)">
+  ${driveOn()&&(V.driveNeeds||(S.drive.dirty||0)>=3||(S.drive.lastSync&&Date.now()-S.drive.lastSync>5*864e5))?`<div class="card" style="padding:12px 16px">
     <div class="row between">
-      <span class="sm">☁️ Drive sync needs a quick re-login</span>
-      <button class="btn small" data-a="drive_connect">Reconnect</button>
+      <span class="sm mut">☁️ ${(S.drive.dirty||0)>0?S.drive.dirty+' workout'+(S.drive.dirty>1?'s':'')+' not backed up yet':'Backup is getting stale'}</span>
+      <button class="btn small" data-a="drive_connect">Sync now</button>
     </div>
   </div>`:''}
   ${(S.workoutsSinceBackup||0)>=4&&!driveOn()?`<div class="card" style="padding:12px 16px">
@@ -2347,8 +2347,9 @@ function more(){
   <h2 style="margin-bottom:10px">Settings &amp; info</h2>
   ${DRIVE.clientId?`<div class="card" style="${driveOn()?'border-color:var(--grn)':''}">
     <div class="lbl" style="margin-bottom:6px">Google Drive sync</div>
-    ${driveOn()?`<p class="sm">☁️ <b class="grn">Connected</b> — your data saves to your own Google Drive
-      after every finished workout (any brief Google flash happens only at that moment).${S.drive.lastSync?' Last sync: '+new Date(S.drive.lastSync).toLocaleString():''}</p>
+    ${driveOn()?`<p class="sm">☁️ <b class="grn">Connected</b> — syncs silently in the background whenever it can.
+      When the connection goes stale a quiet "Sync now" card appears on Today; Google's brief
+      permission screen only ever opens when <b>you</b> tap it.${S.drive.lastSync?' Last sync: '+new Date(S.drive.lastSync).toLocaleString():''}</p>
       ${V.driveNeeds?'<button class="btn small" style="margin-top:8px" data-a="drive_connect">Reconnect</button>':''}
       <button class="btn ghost" style="margin-top:8px" data-a="drive_off">Disconnect</button>`
     :`<p class="sm mut">Link your own Google account and the app keeps a live copy of your data in
