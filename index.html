@@ -2523,12 +2523,17 @@ function more(){
     iCloud Drive, or the Google Drive app. Your training data lives only in this browser, so back up every
     week or two. ${S.lastBackup?'Last backup: <b>'+S.lastBackup+'</b>.':'<b>Never backed up yet.</b>'}</p>
     <label class="btn" style="margin-top:8px">Restore from backup file<input type="file" accept=".json,application/json" id="importfile" style="display:none"></label>
+    ${M&&!M.done?`<button class="btn" style="margin-top:8px" data-a="switch_meso">Switch program (this block is saved)</button>`:''}
     ${M&&!M.done&&M.cursor.w<M.weeks?`<button class="btn ghost" style="margin-top:8px" data-a="end_early">End meso early → deload now</button>`:''}
     <button class="btn danger" style="margin-top:8px" data-a="reset">${V.confirmReset?'Tap again to erase EVERYTHING':'Reset all data'}</button>
   </div>
   ${S.archive.length?`<div class="card"><div class="lbl" style="margin-bottom:8px">Past mesocycles</div>
-    ${S.archive.map(a=>`<div class="slotline"><span class="sm">${esc(a.splitName)}</span>
-    <span class="xs mut">${a.created} · ${Object.keys(a.log).length} sessions</span></div>`).join('')}</div>`:''}
+    ${S.archive.map((a,i)=>`<div class="slotline">
+      <span style="min-width:0"><span class="sm">${esc(a.splitName)}</span><br>
+        <span class="xs mut">${a.created} · ${Object.keys(a.log).length} sessions${a.done?' · finished':' · week '+a.cursor.w+' of '+a.weeks}</span></span>
+      ${a.done?'':`<button class="btn small ghost" data-a="meso_resume:${i}">Resume</button>`}
+    </div>`).join('')}
+    <p class="xs dim" style="margin-top:6px">Resume swaps an unfinished block back in — your current one gets saved here.</p></div>`:''}
   <p class="xs dim" style="text-align:center;margin:8px 0 20px">Built on published hypertrophy, recovery &amp; sports-nutrition research.</p>`;
 }
 
@@ -2630,8 +2635,20 @@ const A={
     S.meso.cursor={w:S.meso.weeks,d:0};S.draft=null;save();V.screen='home';render();}},
   reset:()=>{if(!V.confirmReset){V.confirmReset=true;render();return;}
     localStorage.removeItem(LS);S=defaults();V.screen='welcome';V.confirmReset=false;render();},
-  new_meso:()=>{const old=S.meso;S.archive.push(old);S.meso=null;save();
+  new_meso:()=>{const old=S.meso;S.archive.push(old);S.meso=null;S.draft=null;save();
     V.setup=newSetup(old);V.screen='setup';render();},
+  switch_meso:()=>{
+    if(S.draft&&!confirm('You have a workout in progress — switching discards it. Continue?'))return;
+    if(!S.draft&&!confirm('Start a different program? This block is saved under Past mesocycles and can be resumed anytime.'))return;
+    A.new_meso();},
+  meso_resume:i=>{i=+i;
+    const target=S.archive[i];if(!target)return;
+    if(S.draft&&!confirm('You have a workout in progress — switching discards it. Continue?'))return;
+    S.archive.splice(i,1);
+    if(S.meso)S.archive.push(S.meso);                    // current block goes to the shelf
+    S.meso=target;S.draft=null;save();
+    V.screen='home';render();
+    toast('Back on '+target.splitName+' — week '+target.cursor.w);},
   pfset:arg=>{const i=arg.indexOf(':');V.pf[arg.slice(0,i)]=arg.slice(i+1);render();},
   pf_save:()=>{const f=V.pf;
     const htVal=f.units==='kg'?+f.ht:(+f.htFt*12+(+f.htIn||0));
