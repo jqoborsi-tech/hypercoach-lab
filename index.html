@@ -1004,13 +1004,11 @@ function createMeso(cfg){
   days.forEach((d,di)=>d.slots.forEach((s,si)=>{(pos[s.m]=pos[s.m]||[]).push([di,si]);}));
   const plan={};
   days.forEach((d,di)=>plan['1_'+di]=d.slots.map(()=>0));
-  // Observed week-1 seeding: 2 sets per exercise slot, 3 for Emphasized muscles.
-  // Veterans of prior blocks get +1 (restart above baseline).
+  // Week-1 seeding: 2 sets per slot, 3 for Emphasized muscles — never more.
+  // Reps and load are the progression; sets are a slow secondary lever.
   const pmT=cfg.prioMap||{};
-  const vet=S&&S.archive&&S.archive.length?1:0;
   Object.keys(pos).forEach(m=>{
-    const t=pmT[m]||'G';
-    const per=(t==='E'?3:2)+(t==='M'?0:vet);
+    const per=(pmT[m]||'G')==='E'?3:2;
     pos[m].forEach(p=>{plan['1_'+p[0]][p[1]]=per;});
   });
   return {id:Date.now(),created:today(),weeks:cfg.weeks,daysPerWeek:days.length,
@@ -1024,8 +1022,11 @@ function createMeso(cfg){
 function targetsFor(w,d){
   const M=S.meso;if(!M)return null;
   if(w>=M.weeks){return M.plan['1_'+d].map(()=>1);} // deload: 1 set per exercise
-  if(M.plan[w+'_'+d])return M.plan[w+'_'+d].slice();
-  for(let x=w-1;x>=1;x--)if(M.plan[x+'_'+d])return M.plan[x+'_'+d].slice();
+  // 2-3 working sets per exercise, HARD max 3 — progression lives in reps and
+  // load, not stacked sets. Also retro-caps any older plan that grew past 3.
+  const cap=t=>Math.min(3,Math.max(1,t||1));
+  if(M.plan[w+'_'+d])return M.plan[w+'_'+d].map(cap);
+  for(let x=w-1;x>=1;x--)if(M.plan[x+'_'+d])return M.plan[x+'_'+d].map(cap);
   return M.days[d].slots.map(()=>2);
 }
 function muscleWeekSets(M,w,m){ // planned weekly sets for muscle at week w
@@ -1038,49 +1039,42 @@ function muscleWeekSets(M,w,m){ // planned weekly sets for muscle at week w
 }
 
 /* ---------- The autoregulation algorithm ----------
-   Feedback per muscle: sore 0-3, pump 0-2, work 0-3.
-   -> set change applied to that muscle's slots on this day, next week. */
-function setDelta(f){
-  if(!f)return 0;                        // no feedback: hold (targets still climb via reps)
-  if(f.vol===3)return -1;                // "Too much" -> remove a set
-  if(f.vol===2)return 0;                 // "Pushed my limits" -> hold
-  if(f.vol===0)return f.pump===0?2:1;    // "Not enough" (+ low pump) -> add
-  return 0;                              // "Just right" -> hold
-}
+   Rep-first progression (the way the source books actually run it): every
+   session the target is last-actual + 1 rep, weight is your knob, and SETS
+   RARELY MOVE. fb = {overall:'easy'|'right'|'hard', mus:{m:'more'|'less'}}.
+   'easy' or a per-muscle 'more' adds ONE set to ONE slot of that muscle
+   (hard cap 3/slot, MAV weekly ceiling); 'hard' or 'less' trims one. */
 function applyProgression(w,d,fb){
   const M=S.meso,nw=w+1,changes=[];
   if(nw>=M.weeks)return changes;        // next week is deload: fixed plan
+  fb=fb||{};
+  const CAP=3;
   const cur=targetsFor(w,d);
   const next=cur.slice();
   const musclesInDay=[...new Set(M.days[d].slots.map(s=>s.m))];
   musclesInDay.forEach(m=>{
-    const f=fb[m];
-    let delta=setDelta(f);
-    // in a calorie deficit recovery is compromised: add at most 1 set (HMSIT)
-    if(S.profile&&S.profile.goal==='cut')delta=Math.min(delta,1);
-    if((M.prioMap&&M.prioMap[m])==='M')delta=Math.min(delta,0); // Maintain: hold or drop only
+    const ov=(fb.mus||{})[m];
+    let dir=ov==='more'?1:ov==='less'?-1
+      :fb.overall==='easy'?1:fb.overall==='hard'?-1:0;
+    if(dir>0&&(M.prioMap&&M.prioMap[m])==='M')dir=0; // Maintain: never add
     const idxs=M.days[d].slots.map((s,i)=>s.m===m?i:-1).filter(i=>i>=0);
     const curDay=idxs.reduce((a,i)=>a+cur[i],0);
-    // weekly projection with caps
-    let weeklyOther=0;
-    for(let d2=0;d2<M.daysPerWeek;d2++){
-      if(d2===d)continue;
-      const tg=M.plan[nw+'_'+d2]||targetsFor(w,d2);
-      M.days[d2].slots.forEach((s,i)=>{if(s.m===m)weeklyOther+=tg[i]||0;});
+    if(dir>0){
+      let weeklyOther=0;
+      for(let d2=0;d2<M.daysPerWeek;d2++){
+        if(d2===d)continue;
+        const tg=M.plan[nw+'_'+d2]||targetsFor(w,d2);
+        M.days[d2].slots.forEach((s,i)=>{if(s.m===m)weeklyOther+=tg[i]||0;});
+      }
+      const L=LM(m);
+      const open=idxs.filter(i=>next[i]<CAP).sort((a,b)=>next[a]-next[b]);
+      if(open.length&&weeklyOther+curDay+1<=L.mav)next[open[0]]++;
+    }else if(dir<0){
+      const big=idxs.slice().sort((a,b)=>next[b]-next[a])[0];
+      if(next[big]>1)next[big]--;
     }
-    const L=LM(m);
-    let want=curDay+delta;
-    if(!f&&weeklyOther+want>L.mav)want=Math.max(curDay,L.mav-weeklyOther); // no feedback: don't push past MAV
-    if(weeklyOther+want>L.mrv)want=Math.max(idxs.length,L.mrv-weeklyOther); // hard MRV cap
-    want=Math.max(idxs.length,Math.min(want,idxs.length*8,12)); // ~12 sets/muscle/session ceiling
-    let diff=want-curDay;
-    const arr=idxs.map(i=>({i,s:next[i]}));
-    while(diff>0){arr.sort((a,b)=>a.s-b.s);arr[0].s++;diff--;}
-    while(diff<0){arr.sort((a,b)=>b.s-a.s);if(arr[0].s<=1)break;arr[0].s--;diff++;}
-    arr.forEach(x=>next[x.i]=x.s);
     const newDay=idxs.reduce((a,i)=>a+next[i],0);
-    if(newDay!==curDay)changes.push({m,from:curDay,to:newDay});
-    else changes.push({m,from:curDay,to:newDay});
+    changes.push({m,from:curDay,to:newDay});
   });
   M.plan[nw+'_'+d]=next;
   return changes;
@@ -1135,7 +1129,7 @@ function finishWorkout(){
   if(!musclesDone.length){toast('Log at least one set first');return;}
   stopTimer();
   if(w>=M.weeks){completeDay({});return;}  // deload: no feedback needed
-  V.fb={list:musclesDone,idx:-1,ans:{},pain:[]};
+  V.fb={list:musclesDone,overall:null,mus:{},pain:[]};
   V.screen='feedback';render();
 }
 function completeDay(fbAns){
@@ -1246,7 +1240,6 @@ function render(){
   // scroll to top only when the VIEW changes; in-place updates (logging a set,
   // +/- sets, filters) keep your place on the page
   const viewKey=V.screen
-    +(V.screen==='feedback'&&V.fb?':'+V.fb.idx:'')
     +(V.screen==='setup'&&V.setup?':'+V.setup.step:'');
   const y=window.scrollY;
   app.innerHTML=scr()+tabsHtml();
@@ -2146,36 +2139,32 @@ function workout(){
     <div style="height:70px"></div>`;
 }
 
-const FBQ=[
-  {k:'pump',q:m=>`How much of a pump did you get today in your ${m}?`,
-   opts:['Low pump','Moderate pump','Amazing pump']},
-  {k:'vol',q:m=>`How was the volume of work (number of hard sets) for your ${m}?`,
-   opts:['Not enough','Just right','Pushed my limits','Too much']},
-];
+/* One screen, one required tap. Reps carry the progression automatically, so
+   all the algorithm truly needs is "was that sustainable?" — everything else
+   (joint pain, a specific muscle that needs more/less) is optional and folded
+   away for the rare day it matters. */
 function feedback(){
   const fb=V.fb;
-  if(fb.idx===-1){ // pane 0: joint pain, per exercise trained today
-    const exs=[...new Set(Object.values(S.draft.ex))];
-    return header()+`
-    <div class="xs dim" style="margin-bottom:10px">Recovery check · joints</div>
-    <h1 style="margin-bottom:6px">Any joint pain today?</h1>
-    <p class="sm mut" style="margin-bottom:14px">Tap any exercise that gave you joint (not muscle) pain — it gets flagged for a lighter touch or replacement.</p>
-    <div class="col">${exs.map(id=>`<button class="opt ${fb.pain.includes(id)?'on':''}" style="text-align:left;padding:13px" data-a="fbpain:${id}">${(fb.pain.includes(id)?'⚠️ ':'')+esc(EX[id].name)}</button>`).join('')}</div>
-    <button class="btn primary" style="margin-top:16px" data-a="fbnext">${fb.pain.length?'Continue':'No pain — continue'}</button>`;
-  }
-  const m=fb.list[fb.idx],name=MUSCLES[m].name;
-  const a=fb.ans[m]||{};
-  const ready=['pump','vol'].every(k=>a[k]!==undefined);
+  const exs=[...new Set(Object.values(S.draft.ex))];
   return header()+`
-  <div class="xs dim" style="margin-bottom:10px">Recovery check · ${fb.idx+1} of ${fb.list.length}</div>
-  <h1 style="margin-bottom:16px">${mdot(m)} ${name}</h1>`
-  +FBQ.map(Q=>`<div class="fbq">
-    <div class="sm" style="margin-bottom:8px;font-weight:600">${Q.q(name)}</div>
-    <div class="seg">${Q.opts.map((o,i)=>
-      `<button class="opt ${a[Q.k]===i?'on':''}" data-a="fbans:${Q.k}:${i}">${o}</button>`).join('')}</div>
-  </div>`).join('')
-  +`<button class="btn primary" data-a="fbnext" ${ready?'':'disabled'}>
-      ${fb.idx+1<fb.list.length?'Next Muscle':'Save Workout'}</button>`;
+  <h1 style="margin-bottom:4px">How was that session?</h1>
+  <p class="sm mut" style="margin-bottom:12px">One tap and you're done — this only nudges <b>sets</b>, your rep targets climb automatically.</p>
+  <div class="seg" style="margin-bottom:14px">${[['easy','Had more in me'],['right','Just right'],['hard','Barely survived']].map(x=>
+    `<button class="opt ${fb.overall===x[0]?'on':''}" data-a="fbov:${x[0]}">${x[1]}</button>`).join('')}</div>
+  <details class="card" style="border-bottom:1px solid var(--line);padding:14px 16px">
+    <summary class="sm">⚠️ Something hurt? <span class="xs dim">(joint pain — optional)</span></summary>
+    <div class="col" style="margin-top:10px">${exs.map(id=>`<button class="opt ${fb.pain.includes(id)?'on':''}" style="text-align:left;padding:12px" data-a="fbpain:${id}">${(fb.pain.includes(id)?'⚠️ ':'')+esc(EX[id].name)}</button>`).join('')}</div>
+  </details>
+  <details class="card" style="border-bottom:1px solid var(--line);padding:14px 16px">
+    <summary class="sm">🎯 One muscle felt off? <span class="xs dim">(optional)</span></summary>
+    <p class="xs mut" style="margin:8px 0 10px">Overrides the overall answer for that muscle only.</p>
+    ${fb.list.map(m=>`<div class="row between" style="padding:6px 0">
+      <span class="sm">${mdot(m)} ${MUSCLES[m].name}</span>
+      <span class="row" style="gap:6px">${[['less','Less'],['more','More']].map(x=>
+        `<button class="btn small ${fb.mus[m]===x[0]?'':'ghost'}" data-a="fbmus:${m}:${x[0]}">${x[1]}</button>`).join('')}</span>
+    </div>`).join('')}
+  </details>
+  <button class="btn primary" style="margin-top:14px" data-a="fbsave" ${fb.overall?'':'disabled'}>Save Workout</button>`;
 }
 
 function summary(){
@@ -2571,13 +2560,13 @@ const A={
     for(let i=rows.length-1;i>=0;i--)if(!rows[i].done){rows.splice(i,1);break;}
     save();render();},
   finish:finishWorkout,
-  fbans:arg=>{const[k,v]=arg.split(':');const m=V.fb.list[V.fb.idx];
-    (V.fb.ans[m]=V.fb.ans[m]||{})[k]=+v;render();},
-  fbnext:()=>{if(V.fb.idx+1<V.fb.list.length){V.fb.idx++;render();}
-    else{
-      S.meso.painFlags=S.meso.painFlags||{};
-      V.fb.pain.forEach(id=>S.meso.painFlags[id]=today());
-      completeDay(V.fb.ans);}},
+  fbov:v=>{V.fb.overall=v;render();},
+  fbmus:arg=>{const[m,dir]=arg.split(':');
+    V.fb.mus[m]=V.fb.mus[m]===dir?undefined:dir;render();},
+  fbsave:()=>{if(!V.fb.overall)return;
+    S.meso.painFlags=S.meso.painFlags||{};
+    V.fb.pain.forEach(id=>S.meso.painFlags[id]=today());
+    completeDay({overall:V.fb.overall,mus:V.fb.mus});},
   fbpain:id=>{const i=V.fb.pain.indexOf(id);
     if(i>=0)V.fb.pain.splice(i,1);else V.fb.pain.push(id);render();},
   timer_x:()=>{clearInterval(tInt);$('#timerbar').style.display='none';},
