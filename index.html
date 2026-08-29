@@ -1372,7 +1372,12 @@ function profile(){
     ${pl.notes.length?`<p class="xs mut" style="margin-top:8px">${pl.notes.map(esc).join('. ')}.</p>`:''}
   </div>`:''}
   <button class="btn primary" data-a="pf_save" style="${ready?'':'opacity:.6'}">${S.profile?'Save Changes':'Start Training'}</button>
-  ${S.profile?`<button class="btn ghost" style="margin-top:8px" data-a="nav:more">Cancel</button>`:''}`;
+  ${S.profile?`<button class="btn ghost" style="margin-top:8px" data-a="nav:more">Cancel</button>`:''}
+  ${!S.profile&&DRIVE.clientId?`<div class="card" style="margin-top:16px;padding:14px 16px">
+    <p class="sm mut" style="margin-bottom:10px">Used the app before? Skip all this — pull your workouts,
+    plan and profile straight back from your own Google Drive.</p>
+    <button class="btn" data-a="drive_connect">☁️ Restore from Google Drive</button>
+  </div>`:''}`;
 }
 
 
