@@ -1246,8 +1246,12 @@ function render(){
   const y=window.scrollY;
   app.innerHTML=scr()+tabsHtml();
   if(V.screen==='progress')drawCharts();
-  if(V._viewKey===viewKey)window.scrollTo(0,y);
-  else window.scrollTo(0,0);
+  if(V._viewKey===viewKey){
+    // restore twice: immediately, and next frame — iOS keyboard dismissal
+    // runs its own scroll adjustment after ours and used to win
+    window.scrollTo(0,y);
+    requestAnimationFrame(()=>window.scrollTo(0,y));
+  }else window.scrollTo(0,0);
   V._viewKey=viewKey;
 }
 function tabsHtml(){
@@ -2069,18 +2073,48 @@ function workout(){
     <button class="btn small ghost" data-a="nav:home">Close</button></div>
   <div class="row between" style="margin:0 2px 4px">
     <span class="xs mut">Workout progress</span>
-    <span class="xs num ${setsDone>=setsTotal?'grn':'mut'}">${setsDone}/${setsTotal} sets</span>
+    <span id="wp-label" class="xs num ${setsDone>=setsTotal?'grn':'mut'}">${setsDone}/${setsTotal} sets</span>
   </div>
-  <div class="wkprog"><div class="fill" style="width:${Math.round(100*setsDone/setsTotal)}%"></div></div>`
+  <div class="wkprog"><div id="wp-fill" class="fill" style="width:${Math.round(100*setsDone/setsTotal)}%"></div></div>`
   +note+principle+warmup
-  +day.slots.map((s,si)=>{
-    const ex=EX[D.ex[si]]||EX[s.ex];
-    const sets=D.sets[si]||[];
-    const t=nextTarget(ex.id,w),sg=t;
-    const doneCt=sets.filter(x=>x.done).length;
-    const cue=cueFor(ex.id);
-    const rr=repRange(ex);
-    return `<div class="card">
+  +day.slots.map((s,si)=>wcard(si)).join('')
+  +`<div class="card" style="padding:13px 16px">
+    <details>
+      <summary>⚠️ Feel pain? Quick triage</summary>
+      <p style="margin-top:8px"><b class="grn">Fine — keep going:</b> whole-muscle burn, a deep stretch ache,
+      or a one-off zing that's gone by the next rep. That's stimulus, not injury.</p>
+      <p><b class="red">Stop signs</b> (any of these → stop the exercise):</p>
+      <p>1. Pain in a <b>small, specific spot</b> — tendon or joint, not the muscle belly.<br>
+      2. <b>Sudden</b> onset — a pop, click, or a muscle "giving out."<br>
+      3. Gets <b>worse</b> with each rep, set, or session.</p>
+      <p><b>If it's mild:</b> test a few slow reps with a pause. Better → continue. Same → finish the set,
+      try a comfier technique or lighter load next set. Worse → swap to a different exercise for that muscle
+      today. Still hurts next session after a full warm-up → keep the pain-free substitute, retest after the
+      deload. Everything for that area hurts → see a professional.</p>
+    </details>
+  </div>
+  <div id="finish-slot">${finishBtnHtml()}</div>
+    <div style="height:70px"></div>`;
+}
+function finishBtnHtml(){
+  const l=Object.values(S.draft.sets).flat().filter(x=>!x.done).length;
+  return l?'<button class="btn" disabled>Finish Workout · '+l+' set'+(l>1?'s':'')+' left</button>'
+    :'<button class="btn primary" data-a="finish">Finish Workout</button>';
+}
+/* One exercise card of the workout screen — renderable on its own so logging
+   a set swaps JUST this card in place instead of rebuilding the whole page
+   (full re-renders made iOS jump to the top of the page on every tap). */
+function wcard(si){
+  const M=S.meso,D=S.draft,{w,d}=D;
+  const deload=w>=M.weeks,rir=rirFor(w,M.weeks);
+  const s=M.days[d].slots[si];
+  const ex=EX[D.ex[si]]||EX[s.ex];
+  const sets=D.sets[si]||[];
+  const t=nextTarget(ex.id,w),sg=t;
+  const doneCt=sets.filter(x=>x.done).length;
+  const cue=cueFor(ex.id);
+  const rr=repRange(ex);
+  return `<div class="card" id="xcard-${si}">
       <div class="row between" style="margin-bottom:2px">
         <span class="chip">${mdot(s.m)}<span ${mtint(s.m)}>${MUSCLES[s.m].name}</span>${cue&&cue.t?' · '+cue.t:''}</span>
         <span class="xs mut num">${doneCt}/${sets.length} sets</span>
@@ -2119,26 +2153,19 @@ function workout(){
         <button class="btn small ghost" data-a="rmset:${si}">− set</button>
       </div>
     </div>`;
-  }).join('')
-  +`<div class="card" style="padding:13px 16px">
-    <details>
-      <summary>⚠️ Feel pain? Quick triage</summary>
-      <p style="margin-top:8px"><b class="grn">Fine — keep going:</b> whole-muscle burn, a deep stretch ache,
-      or a one-off zing that's gone by the next rep. That's stimulus, not injury.</p>
-      <p><b class="red">Stop signs</b> (any of these → stop the exercise):</p>
-      <p>1. Pain in a <b>small, specific spot</b> — tendon or joint, not the muscle belly.<br>
-      2. <b>Sudden</b> onset — a pop, click, or a muscle "giving out."<br>
-      3. Gets <b>worse</b> with each rep, set, or session.</p>
-      <p><b>If it's mild:</b> test a few slow reps with a pause. Better → continue. Same → finish the set,
-      try a comfier technique or lighter load next set. Worse → swap to a different exercise for that muscle
-      today. Still hurts next session after a full warm-up → keep the pain-free substitute, retest after the
-      deload. Everything for that area hurts → see a professional.</p>
-    </details>
-  </div>
-  ${(function(){const l=Object.values(D.sets).flat().filter(x=>!x.done).length;
-    return l?'<button class="btn" disabled>Finish Workout · '+l+' set'+(l>1?'s':'')+' left</button>'
-      :'<button class="btn primary" data-a="finish">Finish Workout</button>';})()}
-    <div style="height:70px"></div>`;
+}
+/* Swap one card + refresh the progress bar and Finish button, no page rebuild. */
+function refreshWorkout(si){
+  if(V.screen!=='workout'||!S.draft){render();return;}
+  const card=document.getElementById('xcard-'+si);
+  if(!card){render();return;}
+  card.outerHTML=wcard(si);
+  const all=Object.values(S.draft.sets).map(a=>a||[]).reduce((a,b)=>a.concat(b),[]);
+  const dn=all.filter(x=>x.done).length,tot=all.length||1;
+  const f=document.getElementById('wp-fill');if(f)f.style.width=Math.round(100*dn/tot)+'%';
+  const lab=document.getElementById('wp-label');
+  if(lab){lab.textContent=dn+'/'+tot+' sets';lab.className='xs num '+(dn>=tot?'grn':'mut');}
+  const fs=document.getElementById('finish-slot');if(fs)fs.innerHTML=finishBtnHtml();
 }
 
 /* One screen, one required tap. Reps carry the progression automatically, so
@@ -2555,13 +2582,13 @@ const A={
     x.done=!x.done;save();
     if(x.done){const ex=EX[S.draft.ex[si]];
       startTimer(ex&&ex.big?S.settings.restBig:S.settings.restSmall);}
-    render();},
+    refreshWorkout(si);},
   addset:si=>{si=+si;const rows=S.draft.sets[si];
     const last=rows[rows.length-1];
-    rows.push({w:last?last.w:'',r:'',done:false});save();render();},
+    rows.push({w:last?last.w:'',r:'',done:false});save();refreshWorkout(si);},
   rmset:si=>{si=+si;const rows=S.draft.sets[si];
     for(let i=rows.length-1;i>=0;i--)if(!rows[i].done){rows.splice(i,1);break;}
-    save();render();},
+    save();refreshWorkout(si);},
   finish:finishWorkout,
   fbov:v=>{V.fb.overall=v;render();},
   fbmus:arg=>{const[m,dir]=arg.split(':');
@@ -2719,7 +2746,14 @@ document.addEventListener('change',e=>{ // auto-match: apply new weight to later
   (S.draft.sets[si]||[]).forEach((x,i)=>{
     if(i>xi&&!x.done&&(x.w===ov||x.w==='')){x.w=nv;changed++;}
   });
-  if(changed){save();render();} // silent — matching later sets is expected behavior
+  if(changed){save();
+    // fill the later inputs in place — no re-render, so the field you just
+    // tapped into keeps focus and the keyboard stays up
+    (S.draft.sets[si]||[]).forEach((x,i)=>{
+      if(i>xi&&!x.done){const el=document.querySelector('[data-in="w:'+si+':'+i+'"]');
+        if(el)el.value=x.w;}
+    });
+  }
 });
 
 /* resume mid-workout after reload */
