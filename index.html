@@ -2136,8 +2136,8 @@ function workout(){
     </details>
   </div>
   ${(function(){const l=Object.values(D.sets).flat().filter(x=>!x.done).length;
-    return '<button class="btn primary" style="'+(l?'opacity:.4':'')+'" data-a="finish">'
-      +(l?'Finish Workout · '+l+' set'+(l>1?'s':'')+' left':'Finish Workout')+'</button>';})()}
+    return l?'<button class="btn" disabled>Finish Workout · '+l+' set'+(l>1?'s':'')+' left</button>'
+      :'<button class="btn primary" data-a="finish">Finish Workout</button>';})()}
     <div style="height:70px"></div>`;
 }
 
