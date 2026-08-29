@@ -896,10 +896,12 @@ function driveInit(){
   const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';
   s.onload=()=>{
     gClient=google.accounts.oauth2.initTokenClient({client_id:DRIVE.clientId,scope:DRIVE.scope,
-      callback:r=>{if(r&&r.access_token){gTok=r.access_token;gTokExp=Date.now()+((r.expires_in||3600)-60)*1000;
+      callback:r=>{if(r&&r.access_token){rlog('✓ Signed in');gTok=r.access_token;gTokExp=Date.now()+((r.expires_in||3600)-60)*1000;
         S.drive=S.drive||{};S.drive.connected=true;V.driveNeeds=false;saveQuiet();driveBootSync();}
-        else toast('Google sign-in didn\'t complete — try again',true);},
-      error_callback:()=>toast('Google sign-in was closed before finishing',true)});
+        else{rlog('✗ Google returned no access token'+(r&&r.error?' ('+r.error+')':''));
+          toast('Google sign-in didn\'t complete — try again',true);}},
+      error_callback:e=>{rlog('✗ Sign-in window failed: '+((e&&(e.type||e.message))||'closed'));
+        toast('Google sign-in was closed before finishing',true);}});
     // No sign-in popup on launch: token refresh happens only right after a
     // finished workout (user-sanctioned moment) or an explicit Connect tap.
   };
@@ -951,22 +953,28 @@ function driveSchedulePush(){
 async function driveBootSync(){
   const freshInstance=!S.profile&&!S.meso;   // e.g. re-added home-screen icon
   try{
+    rlog('Searching your Drive for a backup…');
     const id=await driveFind();
     if(!id){
-      if(freshInstance)toast('No backup found on this Google account yet',true);
-      drivePush();return;
+      rlog('✗ No backup file on THIS Google account. If you have more than one Gmail, tap Restore again and pick the account the old app used.');
+      if(freshInstance)toast('No backup found on this Google account',true);
+      else drivePush();
+      return;
     }
+    rlog('✓ Backup found — downloading…');
     const r=await dFetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media');
     const remote=await r.json();
     // a fresh instance ALWAYS restores from a valid backup, whatever the clocks say
     if(remote&&remote.v&&(freshInstance||(remote.updatedAt||0)>(S.updatedAt||0))){
       const keep=S.drive; S=remote; S.drive=Object.assign({},remote.drive,keep,{fileId:id});
-      saveQuiet();V.screen=S.profile?(S.meso?(S.draft?'workout':'home'):'welcome'):'profile';
+      saveQuiet();V.restoreLog='';
+      V.screen=S.profile?(S.meso?(S.draft?'workout':'home'):'welcome'):'profile';
       render();toast('Synced from Google Drive ☁️');
-    }else{drivePush();}
+    }else{rlog('Backup is older than what\'s on this phone — keeping local data.');drivePush();}
   }catch(e){
+    rlog('✗ Drive error: '+((e&&e.message)||'unknown'));
     if(e&&e.message==='scope')return;        // already told the user what to do
-    toast('Couldn\'t reach Google Drive — check your connection and try again',true);
+    toast('Couldn\'t reach Google Drive — see the note under the button',true);
   }
 }
 S=load()||defaults();
@@ -1388,9 +1396,18 @@ function profile(){
   ${S.profile?`<button class="btn ghost" style="margin-top:8px" data-a="nav:more">Cancel</button>`:''}
   ${!S.profile&&DRIVE.clientId?`<div class="card" style="margin-top:16px;padding:14px 16px">
     <p class="sm mut" style="margin-bottom:10px">Used the app before? Skip all this — pull your workouts,
-    plan and profile straight back from your own Google Drive.</p>
+    plan and profile straight back from your own Google Drive. Sign in with the same
+    Google account the old app was connected to.</p>
     <button class="btn" data-a="drive_connect">☁️ Restore from Google Drive</button>
+    <div id="rlog" class="xs mut" style="margin-top:10px;white-space:pre-line">${esc(V.restoreLog||'')}</div>
   </div>`:''}`;
+}
+/* Live status line for the setup-screen restore — every step reports, so a
+   failure says exactly where it died instead of failing silently. */
+function rlog(msg){
+  V.restoreLog=((V.restoreLog||'')+'\n'+msg).trim();
+  const el=document.getElementById('rlog');
+  if(el)el.textContent=V.restoreLog;
 }
 
 
