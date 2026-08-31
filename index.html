@@ -888,16 +888,41 @@ function saveQuiet(){localStorage.setItem(LS,JSON.stringify(S));} // no sync loo
    Each device connects its own Google account; newest data wins on open;
    every save debounce-pushes. Client ID identifies the app, not a user. */
 const DRIVE={clientId:'808904926785-vf6ve3snrgt9coftjd8im29pfs9to0r7.apps.googleusercontent.com',
-  scope:'https://www.googleapis.com/auth/drive.file',fname:'hypercoach2-data.json'};
+  scope:'https://www.googleapis.com/auth/drive.file',fname:'hypercoach2-data.json',
+  redirectUri:'https://jqoborsi-tech.github.io/hypercoach-lab/'};
 let gTok=null,gTokExp=0,gClient=null,gPushTimer=null,gBusy=false;
 function driveOn(){return !!(DRIVE.clientId&&S.drive&&S.drive.connected);}
+/* Was the last SUCCESSFUL backup recent enough to count as a safety net?
+   "Connected" alone means nothing — this app once lost data trusting it. */
+function driveFresh(){return !!(S.drive&&S.drive.lastSync&&Date.now()-S.drive.lastSync<4*864e5);}
+function isStandalone(){return !!(window.navigator&&window.navigator.standalone);}
+/* iOS home-screen apps can't reliably receive tokens from Google's popup —
+   full-page redirect there and back is the flow that actually works. */
+function driveRedirectAuth(){
+  const p=new URLSearchParams({client_id:DRIVE.clientId,redirect_uri:DRIVE.redirectUri,
+    response_type:'token',scope:DRIVE.scope,include_granted_scopes:'true',state:'hcdrive',
+    prompt:(S.drive&&S.drive.everConsented)?'':'consent'});
+  location.href='https://accounts.google.com/o/oauth2/v2/auth?'+p.toString();
+}
+function driveHashToken(){ // token (or error) returning from the redirect flow
+  if(!location.hash)return false;
+  const h=new URLSearchParams(location.hash.slice(1));
+  if(h.get('state')!=='hcdrive')return false;
+  try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+  if(h.get('error')){toast('Google sign-in failed: '+h.get('error'),true);return false;}
+  const tok=h.get('access_token');if(!tok)return false;
+  gTok=tok;gTokExp=Date.now()+((+h.get('expires_in')||3600)-60)*1000;
+  S.drive=S.drive||{};S.drive.connected=true;S.drive.everConsented=true;
+  V.driveNeeds=false;saveQuiet();
+  return true;
+}
 function driveInit(){
   if(!DRIVE.clientId)return;
   const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';
   s.onload=()=>{
     gClient=google.accounts.oauth2.initTokenClient({client_id:DRIVE.clientId,scope:DRIVE.scope,
       callback:r=>{if(r&&r.access_token){rlog('✓ Signed in');gTok=r.access_token;gTokExp=Date.now()+((r.expires_in||3600)-60)*1000;
-        S.drive=S.drive||{};S.drive.connected=true;V.driveNeeds=false;saveQuiet();driveBootSync();}
+        S.drive=S.drive||{};S.drive.connected=true;S.drive.everConsented=true;V.driveNeeds=false;saveQuiet();driveBootSync();}
         else{rlog('✗ Google returned no access token'+(r&&r.error?' ('+r.error+')':''));
           toast('Google sign-in didn\'t complete — try again',true);}},
       error_callback:e=>{rlog('✗ Sign-in window failed: '+((e&&(e.type||e.message))||'closed'));
@@ -1198,10 +1223,9 @@ function completeDay(fbAns){
   }
   S.draft=null;save();
   // NEVER auto-open the Google token screen (the flash annoyed the user).
-  // With a live token the push above already ran silently; without one we
-  // just count the unsynced workout — Today shows a quiet one-tap Sync card
-  // once it actually matters.
-  if(driveOn()&&!driveToken()){S.drive.dirty=(S.drive.dirty||0)+1;saveQuiet();}
+  // Every workout counts as unsynced until a push actually SUCCEEDS
+  // (drivePush clears the counter); Today shows a one-tap Sync card.
+  if(driveOn()){S.drive.dirty=(S.drive.dirty||0)+1;saveQuiet();}
   V.screen='summary';V.fb=null;render();
 }
 function skipDay(){
@@ -2024,15 +2048,15 @@ function home(){
 function homeCards(M,deload){
   const w=M.cursor.w;
   return `
-  ${driveOn()&&(V.driveNeeds||(S.drive.dirty||0)>=3||(S.drive.lastSync&&Date.now()-S.drive.lastSync>5*864e5))?`<div class="card" style="padding:12px 16px">
+  ${driveOn()&&(V.driveNeeds||(S.drive.dirty||0)>=3||!S.drive.lastSync||Date.now()-S.drive.lastSync>5*864e5)?`<div class="card" style="padding:12px 16px;border-color:var(--amb)">
     <div class="row between">
-      <span class="sm mut">☁️ ${(S.drive.dirty||0)>0?S.drive.dirty+' workout'+(S.drive.dirty>1?'s':'')+' not backed up yet':'Backup is getting stale'}</span>
-      <button class="btn small" data-a="drive_connect">Sync now</button>
+      <span class="sm mut">☁️ ${!S.drive.lastSync?'Never backed up yet':(S.drive.dirty||0)>0?S.drive.dirty+' workout'+(S.drive.dirty>1?'s':'')+' not backed up yet':'Backup is getting stale'}</span>
+      <button class="btn small" data-a="drive_sync">Sync now</button>
     </div>
   </div>`:''}
-  ${(S.workoutsSinceBackup||0)>=4&&!driveOn()?`<div class="card" style="padding:12px 16px">
+  ${(S.workoutsSinceBackup||0)>=4&&!driveFresh()?`<div class="card" style="padding:12px 16px;border-color:var(--amb)">
     <div class="row between">
-      <span class="sm mut">💾 ${S.workoutsSinceBackup} workouts since your last backup</span>
+      <span class="sm mut">💾 ${S.workoutsSinceBackup} workouts with no verified backup</span>
       <button class="btn small" data-a="export">Back up</button>
     </div>
   </div>`:''}
@@ -2407,15 +2431,15 @@ function more(){
   const M=S.meso,p=S.profile,pl=placement(p);
   return header()+`
   <h2 style="margin-bottom:10px">Settings &amp; info</h2>
-  ${DRIVE.clientId?`<div class="card" style="${driveOn()?'border-color:var(--grn)':''}">
+  ${DRIVE.clientId?`<div class="card" style="${driveOn()?(driveFresh()?'border-color:var(--grn)':'border-color:var(--red)'):''}">
     <div class="lbl" style="margin-bottom:6px">Google Drive sync</div>
-    ${driveOn()?`<p class="sm">☁️ <b class="grn">Connected</b> — syncs silently in the background whenever it can.
-      When the connection goes stale a quiet "Sync now" card appears on Today; Google's brief
-      permission screen only ever opens when <b>you</b> tap it.${S.drive.lastSync?' Last sync: '+new Date(S.drive.lastSync).toLocaleString():''}</p>
-      ${V.driveNeeds?'<button class="btn small" style="margin-top:8px" data-a="drive_connect">Reconnect</button>':''}
+    ${driveOn()?`<p class="sm">${driveFresh()?'☁️ <b class="grn">Backed up</b>':'⚠️ <b class="red">Not safely backed up</b>'} —
+      last <b>successful</b> backup: <b>${S.drive.lastSync?new Date(S.drive.lastSync).toLocaleString():'never'}</b>.
+      That timestamp is the only thing that means your data is safe — "connected" alone doesn't.</p>
+      <button class="btn ${driveFresh()?'':'primary'}" style="margin-top:10px" data-a="drive_sync">Sync now</button>
       <button class="btn ghost" style="margin-top:8px" data-a="drive_off">Disconnect</button>`
-    :`<p class="sm mut">Link your own Google account and the app keeps a live copy of your data in
-      <b>your</b> Drive — automatic after every workout, restores itself on a new phone.</p>
+    :`<p class="sm mut">Link your own Google account and the app keeps a copy of your data in
+      <b>your</b> Drive — restores itself on a new phone or reinstalled icon.</p>
       <button class="btn primary" style="margin-top:10px" data-a="drive_connect">Connect Google Drive</button>`}
   </div>`:''}
   ${p?`<div class="card">
@@ -2716,7 +2740,13 @@ const A={
     try{await navigator.clipboard.writeText(txt);toast('Copied to clipboard');}
     catch(e){toast('Could not copy');}},
   automatch:()=>{S.settings.autoMatch=S.settings.autoMatch===false?true:false;save();render();},
+  drive_sync:async()=>{
+    if(driveToken()){toast('Backing up…');await drivePush();
+      toast(S.drive.lastSync&&Date.now()-S.drive.lastSync<60e3?'Backed up ☁️':'Backup failed — try again',
+        !(S.drive.lastSync&&Date.now()-S.drive.lastSync<60e3));render();}
+    else A.drive_connect();},
   drive_connect:()=>{
+    if(isStandalone()){rlog('Opening Google sign-in…');driveRedirectAuth();return;}
     if(!gClient){toast('Google sync not configured yet');return;}
     try{gClient.requestAccessToken({prompt:S.drive&&S.drive.connected?'':'consent'});}
     catch(e){toast('Could not open Google sign-in');}},
@@ -2810,8 +2840,10 @@ document.addEventListener('change',e=>{ // auto-match: apply new weight to later
 
 /* resume mid-workout after reload */
 if(S.profile&&S.draft&&S.meso&&!S.meso.done)V.screen='workout';
+const cameBackWithToken=driveHashToken(); // returning from redirect sign-in?
 render();
 driveInit();
+if(cameBackWithToken){toast('Google connected ☁️');driveBootSync();}
 </script>
 </body>
 </html>
