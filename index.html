@@ -993,7 +993,7 @@ async function driveBootSync(){
     if(!id){
       rlog('✗ No backup file on THIS Google account. If you have more than one Gmail, tap Restore again and pick the account the old app used.');
       if(freshInstance)toast('No backup found on this Google account',true);
-      else drivePush();
+      drivePush(); // create the backup file right away either way
       return;
     }
     rlog('✓ Backup found — downloading…');
