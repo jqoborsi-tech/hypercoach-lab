@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png?v=2">
+<title>ArchScan Viewer</title>
+</head>
+<body>
+<style>
+  :root{
+    --bg:#0b0b0d; --card:#151518; --card2:#202024; --line:#26262b;
+    --ink:#f4f4f5; --mut:#a1a1aa; --dim:#71717a;
+    --red:#d92c2c; --grn:#4fb477; --amb:#d9942b; --blu:#6aa3d9;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .lbl{font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--mut)}
+  .mut{color:var(--mut)} .sm{font-size:.85rem} .xs{font-size:.75rem}
+  .num{font-variant-numeric:tabular-nums}
+  .grn{color:var(--grn)} .amb{color:var(--amb)} .red{color:var(--red)} .blu{color:var(--blu)}
+
+  #top{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
+    display:flex;gap:8px;align-items:center;
+    background:linear-gradient(to bottom,rgba(11,11,13,.92),rgba(11,11,13,0))}
+  #title{font-weight:800;letter-spacing:-.02em;font-size:1rem;margin-right:auto}
+  .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:11px;padding:8px 12px;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer}
+  .btn:active{background:var(--card2)}
+  .btn.on{border-color:var(--blu);color:var(--blu)}
+
+  #drop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:rgba(11,11,13,.97);z-index:20}
+  #dropInner{max-width:420px;text-align:center}
+  #dropInner h1{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+  #dropInner p{color:var(--mut);font-size:.88rem;margin-bottom:16px}
+  #pick{display:block;width:100%;border:1px dashed var(--line);border-radius:16px;padding:26px 16px;
+    background:var(--card);cursor:pointer;color:var(--ink);font:inherit;font-weight:700}
+  #pick:active{background:var(--card2)}
+  #formats{margin-top:14px;font-size:.72rem;color:var(--dim);text-align:left;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  #formats b{color:var(--mut);font-weight:700}
+
+  #sheet{position:fixed;left:0;right:0;bottom:0;max-height:62%;overflow-y:auto;
+    background:rgba(21,21,24,.96);backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);border-radius:16px 16px 0 0;
+    padding:10px 14px calc(env(safe-area-inset-bottom) + 14px);
+    transform:translateY(calc(100% - 46px));transition:transform .22s ease}
+  #sheet.open{transform:translateY(0)}
+  #grab{width:100%;background:none;border:none;color:inherit;font:inherit;padding:4px 0 10px;
+    display:flex;align-items:center;gap:8px;cursor:pointer}
+  #grabBar{width:34px;height:4px;border-radius:2px;background:var(--line)}
+  .row{display:flex;align-items:center;gap:10px}
+  .between{justify-content:space-between}
+  .kv{display:flex;justify-content:space-between;gap:12px;font-size:.84rem;padding:3px 0}
+  .kv span:first-child{color:var(--mut)}
+  .kv span:last-child{font-variant-numeric:tabular-nums}
+  .sec{margin-top:12px}
+  .sec h2{font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--mut);margin-bottom:6px}
+  .note{font-size:.72rem;color:var(--dim);margin-top:6px}
+  #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 56px);transform:translateX(-50%);
+    background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:9px 14px;
+    font-size:.8rem;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:88vw}
+  #toast.show{opacity:1}
+  #lmList div{font-size:.78rem;padding:2px 0;display:flex;justify-content:space-between;gap:10px}
+  #lmList span:last-child{color:var(--mut);font-variant-numeric:tabular-nums;font-size:.72rem}
+</style>
+
+<canvas id="gl"></canvas>
+
+<div id="top" hidden>
+  <div id="title">ArchScan Viewer</div>
+  <button class="btn" id="btnTex">Texture</button>
+  <button class="btn" id="btnLm">Points</button>
+  <button class="btn" id="btnFit">Fit</button>
+  <button class="btn" id="btnNew">Open</button>
+</div>
+
+<div id="drop">
+  <div id="dropInner">
+    <h1>ArchScan Viewer</h1>
+    <p>Open a facial scan export to check it before it goes into CAD. Everything is read in your browser — nothing is uploaded.</p>
+    <button id="pick">Choose files… or drop them here</button>
+    <input id="file" type="file" multiple accept=".obj,.ply,.stl,.json,.jpg,.jpeg,.png,.mtl" hidden>
+    <div id="formats">
+      <b>Mesh</b> — .obj, .ply (ascii or binary), .stl (ascii or binary)<br>
+      <b>Texture</b> — drop the .jpg alongside the .obj<br>
+      <b>Landmarks</b> — landmarks.json from the export<br>
+      <b>Units</b> — files are read as millimetres, the way ArchScan writes them
+    </div>
+  </div>
+</div>
+
+<div id="sheet">
+  <button id="grab"><div id="grabBar"></div><span class="lbl" id="grabLabel">Scan details</span></button>
+  <div id="sheetBody"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * Small matrix helpers (column-major, the order WebGL wants)
+ * ------------------------------------------------------------------ */
+const M4 = {
+  identity: () => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
+  multiply(a, b) {
+    const o = new Float32Array(16);
+    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+      o[c*4+r] = a[r]*b[c*4] + a[4+r]*b[c*4+1] + a[8+r]*b[c*4+2] + a[12+r]*b[c*4+3];
+    }
+    return o;
+  },
+  perspective(fovy, aspect, near, far) {
+    const f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
+    return new Float32Array([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0]);
+  },
+  lookAt(eye, target, up) {
+    const z = norm(sub(eye, target));
+    const x = norm(cross(up, z));
+    const y = cross(z, x);
+    return new Float32Array([
+      x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0,
+      -dot(x,eye), -dot(y,eye), -dot(z,eye), 1]);
+  },
+  translation(t) {
+    const m = M4.identity(); m[12]=t[0]; m[13]=t[1]; m[14]=t[2]; return m;
+  }
+};
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const norm=a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];};
+
+/* ------------------------------------------------------------------ *
+ * Parsers. Each returns {positions, normals, colors, uvs, indices}
+ * with positions in whatever unit the file used (mm for ArchScan).
+ * ------------------------------------------------------------------ */
+
+function parseOBJ(text) {
+  const v = [], vt = [], vn = [];
+  const positions = [], normals = [], uvs = [], indices = [];
+  const lookup = new Map();
+
+  const addVertex = (token) => {
+    if (lookup.has(token)) return lookup.get(token);
+    const parts = token.split("/");
+    const pi = parseIndex(parts[0], v.length / 3);
+    const ti = parts.length > 1 && parts[1] !== "" ? parseIndex(parts[1], vt.length / 2) : -1;
+    const ni = parts.length > 2 && parts[2] !== "" ? parseIndex(parts[2], vn.length / 3) : -1;
+    const index = positions.length / 3;
+    positions.push(v[pi*3], v[pi*3+1], v[pi*3+2]);
+    if (ti >= 0) uvs.push(vt[ti*2], vt[ti*2+1]); else uvs.push(0, 0);
+    if (ni >= 0) normals.push(vn[ni*3], vn[ni*3+1], vn[ni*3+2]); else normals.push(0, 0, 0);
+    lookup.set(token, index);
+    return index;
+  };
+  const parseIndex = (raw, count) => {
+    const n = parseInt(raw, 10);
+    return n < 0 ? count + n : n - 1;
+  };
+
+  for (const rawLine of text.split("\n")) {
+    const line = rawLine.trim();
+    if (!line || line[0] === "#") continue;
+    const parts = line.split(/\s+/);
+    switch (parts[0]) {
+      case "v":  v.push(+parts[1], +parts[2], +parts[3]); break;
+      case "vt": vt.push(+parts[1], +parts[2]); break;
+      case "vn": vn.push(+parts[1], +parts[2], +parts[3]); break;
+      case "f": {
+        const fan = [];
+        for (let i = 1; i < parts.length; i++) fan.push(addVertex(parts[i]));
+        for (let i = 1; i + 1 < fan.length; i++) indices.push(fan[0], fan[i], fan[i+1]);
+        break;
+      }
+    }
+  }
+  const hasNormals = normals.some(n => n !== 0);
+  return {
+    positions: new Float32Array(positions),
+    normals: hasNormals ? new Float32Array(normals) : null,
+    uvs: vt.length ? new Float32Array(uvs) : null,
+    colors: null,
+    indices: makeIndexArray(indices, positions.length / 3)
+  };
+}
+
+function parseSTL(buffer) {
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  const ascii = String.fromCharCode(...bytes.subarray(0, 5)).toLowerCase() === "solid";
+  const triangleCount = buffer.byteLength >= 84 ? view.getUint32(80, true) : 0;
+  const looksBinary = buffer.byteLength === 84 + triangleCount * 50;
+
+  if (ascii && !looksBinary) {
+    const text = new TextDecoder().decode(bytes);
+    const positions = [], normals = [];
+    const numbers = /vertex\s+(-?[\d.eE+-]+)\s+(-?[\d.eE+-]+)\s+(-?[\d.eE+-]+)/g;
+    const faceNormals = /facet\s+normal\s+(-?[\d.eE+-]+)\s+(-?[\d.eE+-]+)\s+(-?[\d.eE+-]+)/g;
+    let m, fn = [];
+    while ((m = faceNormals.exec(text))) fn.push([+m[1], +m[2], +m[3]]);
+    let i = 0;
+    while ((m = numbers.exec(text))) {
+      positions.push(+m[1], +m[2], +m[3]);
+      const n = fn[Math.floor(i / 3)] || [0, 0, 1];
+      normals.push(n[0], n[1], n[2]);
+      i++;
+    }
+    return finishSoup(positions, normals);
+  }
+
+  const positions = new Float32Array(triangleCount * 9);
+  const normals = new Float32Array(triangleCount * 9);
+  let offset = 84, p = 0;
+  for (let t = 0; t < triangleCount; t++) {
+    const nx = view.getFloat32(offset, true), ny = view.getFloat32(offset+4, true), nz = view.getFloat32(offset+8, true);
+    offset += 12;
+    for (let k = 0; k < 3; k++) {
+      positions[p] = view.getFloat32(offset, true);
+      positions[p+1] = view.getFloat32(offset+4, true);
+      positions[p+2] = view.getFloat32(offset+8, true);
+      normals[p] = nx; normals[p+1] = ny; normals[p+2] = nz;
+      offset += 12; p += 3;
+    }
+    offset += 2;
+  }
+  return finishSoup(positions, normals);
+}
+
+function finishSoup(positions, normals) {
+  const count = positions.length / 3;
+  const indices = count > 65535 ? new Uint32Array(count) : new Uint16Array(count);
+  for (let i = 0; i < count; i++) indices[i] = i;
+  return {
+    positions: positions instanceof Float32Array ? positions : new Float32Array(positions),
+    normals: normals instanceof Float32Array ? normals : new Float32Array(normals),
+    uvs: null, colors: null,
+    indices
+  };
+}
+
+function parsePLY(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const headerText = new TextDecoder().decode(bytes.subarray(0, Math.min(bytes.length, 8192)));
+  const endToken = "end_header";
+  const endIndex = headerText.indexOf(endToken);
+  if (endIndex < 0) throw new Error("PLY header not found");
+  let headerEnd = endIndex + endToken.length;
+  while (headerEnd < bytes.length && bytes[headerEnd] !== 10) headerEnd++;
+  headerEnd++;
+
+  const lines = headerText.slice(0, endIndex).split("\n").map(l => l.trim()).filter(Boolean);
+  let format = "ascii", vertexCount = 0, faceCount = 0;
+  const vertexProps = [];
+  let listCountType = "uchar", listIndexType = "int";
+  let current = null;
+
+  for (const line of lines) {
+    const parts = line.split(/\s+/);
+    if (parts[0] === "format") format = parts[1];
+    else if (parts[0] === "element") {
+      current = parts[1];
+      if (current === "vertex") vertexCount = +parts[2];
+      if (current === "face") faceCount = +parts[2];
+    } else if (parts[0] === "property") {
+      if (parts[1] === "list") { listCountType = parts[2]; listIndexType = parts[3]; }
+      else if (current === "vertex") vertexProps.push({ type: parts[1], name: parts[2] });
+    }
+  }
+
+  const positions = new Float32Array(vertexCount * 3);
+  const normals = new Float32Array(vertexCount * 3);
+  const colors = new Float32Array(vertexCount * 3);
+  let hasNormals = false, hasColors = false;
+  const indices = [];
+
+  const sizeOf = t => ({ char:1, uchar:1, int8:1, uint8:1, short:2, ushort:2, int16:2, uint16:2,
+                         int:4, uint:4, int32:4, uint32:4, float:4, float32:4, double:8, float64:8 }[t] || 4);
+  const readScalar = (view, offset, type, little) => {
+    switch (type) {
+      case "char": case "int8": return view.getInt8(offset);
+      case "uchar": case "uint8": return view.getUint8(offset);
+      case "short": case "int16": return view.getInt16(offset, little);
+      case "ushort": case "uint16": return view.getUint16(offset, little);
+      case "int": case "int32": return view.getInt32(offset, little);
+      case "uint": case "uint32": return view.getUint32(offset, little);
+      case "double": case "float64": return view.getFloat64(offset, little);
+      default: return view.getFloat32(offset, little);
+    }
+  };
+  const store = (i, name, value) => {
+    switch (name) {
+      case "x": positions[i*3] = value; break;
+      case "y": positions[i*3+1] = value; break;
+      case "z": positions[i*3+2] = value; break;
+      case "nx": normals[i*3] = value; hasNormals = true; break;
+      case "ny": normals[i*3+1] = value; break;
+      case "nz": normals[i*3+2] = value; break;
+      case "red":   colors[i*3] = value / 255; hasColors = true; break;
+      case "green": colors[i*3+1] = value / 255; break;
+      case "blue":  colors[i*3+2] = value / 255; break;
+    }
+  };
+
+  if (format === "ascii") {
+    const body = new TextDecoder().decode(bytes.subarray(headerEnd)).split("\n");
+    let cursor = 0;
+    for (let i = 0; i < vertexCount; i++) {
+      const parts = (body[cursor++] || "").trim().split(/\s+/);
+      vertexProps.forEach((prop, k) => store(i, prop.name, +parts[k]));
+    }
+    for (let f = 0; f < faceCount; f++) {
+      const parts = (body[cursor++] || "").trim().split(/\s+/).map(Number);
+      const n = parts[0];
+      for (let k = 1; k + 1 < n; k++) indices.push(parts[1], parts[k+1], parts[k+2]);
+    }
+  } else {
+    const little = format.indexOf("little") >= 0;
+    const view = new DataView(buffer);
+    let offset = headerEnd;
+    for (let i = 0; i < vertexCount; i++) {
+      for (const prop of vertexProps) {
+        store(i, prop.name, readScalar(view, offset, prop.type, little));
+        offset += sizeOf(prop.type);
+      }
+    }
+    for (let f = 0; f < faceCount; f++) {
+      const n = readScalar(view, offset, listCountType, little);
+      offset += sizeOf(listCountType);
+      const face = [];
+      for (let k = 0; k < n; k++) {
+        face.push(readScalar(view, offset, listIndexType, little));
+        offset += sizeOf(listIndexType);
+      }
+      for (let k = 1; k + 1 < face.length; k++) indices.push(face[0], face[k], face[k+1]);
+    }
+  }
+
+  return {
+    positions,
+    normals: hasNormals ? normals : null,
+    colors: hasColors ? colors : null,
+    uvs: null,
+    indices: makeIndexArray(indices, vertexCount)
+  };
+}
+
+function makeIndexArray(list, vertexCount) {
+  return vertexCount > 65535 ? new Uint32Array(list) : new Uint16Array(list);
+}
+
+function computeNormals(positions, indices) {
+  const normals = new Float32Array(positions.length);
+  for (let i = 0; i + 2 < indices.length; i += 3) {
+    const a = indices[i]*3, b = indices[i+1]*3, c = indices[i+2]*3;
+    const e1 = [positions[b]-positions[a], positions[b+1]-positions[a+1], positions[b+2]-positions[a+2]];
+    const e2 = [positions[c]-positions[a], positions[c+1]-positions[a+1], positions[c+2]-positions[a+2]];
+    const n = cross(e1, e2);
+    for (const base of [a, b, c]) {
+      normals[base] += n[0]; normals[base+1] += n[1]; normals[base+2] += n[2];
+    }
+  }
+  for (let i = 0; i < normals.length; i += 3) {
+    const l = Math.hypot(normals[i], normals[i+1], normals[i+2]) || 1;
+    normals[i] /= l; normals[i+1] /= l; normals[i+2] /= l;
+  }
+  return normals;
+}
+
+/* ------------------------------------------------------------------ *
+ * Renderer
+ * ------------------------------------------------------------------ */
+const canvas = document.getElementById("gl");
+const gl = canvas.getContext("webgl", { antialias: true, alpha: false });
+if (!gl) toast("This browser has no WebGL.");
+
+const VERT = `
+attribute vec3 aPos; attribute vec3 aNormal; attribute vec3 aColor; attribute vec2 aUV;
+uniform mat4 uMVP; uniform float uPointSize;
+varying vec3 vNormal; varying vec3 vColor; varying vec2 vUV;
+void main(){
+  vNormal = aNormal; vColor = aColor; vUV = aUV;
+  gl_Position = uMVP * vec4(aPos, 1.0);
+  gl_PointSize = uPointSize;
+}`;
+const FRAG = `
+precision mediump float;
+varying vec3 vNormal; varying vec3 vColor; varying vec2 vUV;
+uniform sampler2D uTex;
+uniform float uUseTex, uUseColor, uFlat;
+uniform vec3 uFlatColor;
+void main(){
+  vec3 base = vec3(0.82, 0.74, 0.70);
+  if (uUseTex > 0.5) base = texture2D(uTex, vUV).rgb;
+  else if (uUseColor > 0.5) base = vColor;
+  if (uFlat > 0.5) { gl_FragColor = vec4(uFlatColor, 1.0); return; }
+  vec3 n = normalize(vNormal);
+  vec3 l1 = normalize(vec3(0.35, 0.5, 1.0));
+  vec3 l2 = normalize(vec3(-0.6, 0.1, 0.4));
+  float d = 0.30 + 0.62*max(dot(n,l1),0.0) + 0.22*max(dot(n,l2),0.0);
+  gl_FragColor = vec4(base * d, 1.0);
+}`;
+
+function compile(type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source); gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader));
+  return shader;
+}
+let program = null, loc = {};
+if (gl) {
+  program = gl.createProgram();
+  gl.attachShader(program, compile(gl.VERTEX_SHADER, VERT));
+  gl.attachShader(program, compile(gl.FRAGMENT_SHADER, FRAG));
+  gl.linkProgram(program);
+  gl.useProgram(program);
+  loc = {
+    aPos: gl.getAttribLocation(program, "aPos"),
+    aNormal: gl.getAttribLocation(program, "aNormal"),
+    aColor: gl.getAttribLocation(program, "aColor"),
+    aUV: gl.getAttribLocation(program, "aUV"),
+    uMVP: gl.getUniformLocation(program, "uMVP"),
+    uTex: gl.getUniformLocation(program, "uTex"),
+    uUseTex: gl.getUniformLocation(program, "uUseTex"),
+    uUseColor: gl.getUniformLocation(program, "uUseColor"),
+    uFlat: gl.getUniformLocation(program, "uFlat"),
+    uFlatColor: gl.getUniformLocation(program, "uFlatColor"),
+    uPointSize: gl.getUniformLocation(program, "uPointSize")
+  };
+  gl.enable(gl.DEPTH_TEST);
+  gl.clearColor(0.043, 0.043, 0.051, 1);
+  gl.getExtension("OES_element_index_uint");   // large scans blow past 65k vertices
+}
+
+const scene = {
+  mesh: null, buffers: null, texture: null, hasTexture: false,
+  landmarks: [], landmarkBuffer: null, report: null,
+  centre: [0,0,0], radius: 120
+};
+const view = { theta: 0, phi: 0, distance: 320, showTexture: true, showLandmarks: true };
+
+function uploadMesh(mesh) {
+  const normals = mesh.normals || computeNormals(mesh.positions, mesh.indices);
+  const colors = mesh.colors || new Float32Array(mesh.positions.length).fill(1);
+  const uvs = mesh.uvs || new Float32Array((mesh.positions.length / 3) * 2);
+  const make = (data, target) => {
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(target, buffer);
+    gl.bufferData(target, data, gl.STATIC_DRAW);
+    return buffer;
+  };
+  scene.mesh = mesh;
+  scene.buffers = {
+    position: make(mesh.positions, gl.ARRAY_BUFFER),
+    normal: make(normals, gl.ARRAY_BUFFER),
+    color: make(colors, gl.ARRAY_BUFFER),
+    uv: make(uvs, gl.ARRAY_BUFFER),
+    index: make(mesh.indices, gl.ELEMENT_ARRAY_BUFFER),
+    count: mesh.indices.length,
+    type: mesh.indices instanceof Uint32Array ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT,
+    hasColors: !!mesh.colors
+  };
+  frameScene();
+}
+
+function frameScene() {
+  const p = scene.mesh ? scene.mesh.positions : null;
+  if (!p || !p.length) return;
+  let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < p.length; i += 3) {
+    for (let k = 0; k < 3; k++) {
+      if (p[i+k] < lo[k]) lo[k] = p[i+k];
+      if (p[i+k] > hi[k]) hi[k] = p[i+k];
+    }
+  }
+  scene.bounds = { lo, hi };
+  scene.centre = [(lo[0]+hi[0])/2, (lo[1]+hi[1])/2, (lo[2]+hi[2])/2];
+  scene.radius = Math.max(hi[0]-lo[0], hi[1]-lo[1], hi[2]-lo[2]) / 2 || 100;
+  view.distance = scene.radius * 3.1;
+  view.theta = 0; view.phi = 0;
+}
+
+function render() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.floor(canvas.clientWidth * dpr), h = Math.floor(canvas.clientHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  if (!scene.buffers) { requestAnimationFrame(render); return; }
+
+  const eye = [
+    scene.centre[0] + view.distance * Math.cos(view.phi) * Math.sin(view.theta),
+    scene.centre[1] + view.distance * Math.sin(view.phi),
+    scene.centre[2] + view.distance * Math.cos(view.phi) * Math.cos(view.theta)
+  ];
+  const near = Math.max(scene.radius * 0.02, 0.5);
+  const proj = M4.perspective(38 * Math.PI / 180, canvas.width / canvas.height, near, view.distance + scene.radius * 6);
+  const mvp = M4.multiply(proj, M4.lookAt(eye, scene.centre, [0, 1, 0]));
+
+  gl.useProgram(program);
+  gl.uniformMatrix4fv(loc.uMVP, false, mvp);
+  gl.uniform1f(loc.uPointSize, 7 * (Math.min(window.devicePixelRatio || 1, 2)));
+
+  const bind = (buffer, location, size) => {
+    if (location < 0) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.enableVertexAttribArray(location);
+    gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
+  };
+  bind(scene.buffers.position, loc.aPos, 3);
+  bind(scene.buffers.normal, loc.aNormal, 3);
+  bind(scene.buffers.color, loc.aColor, 3);
+  bind(scene.buffers.uv, loc.aUV, 2);
+
+  const useTexture = scene.hasTexture && view.showTexture;
+  gl.uniform1f(loc.uUseTex, useTexture ? 1 : 0);
+  gl.uniform1f(loc.uUseColor, (!useTexture && scene.buffers.hasColors) ? 1 : 0);
+  gl.uniform1f(loc.uFlat, 0);
+  if (useTexture) {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, scene.texture);
+    gl.uniform1i(loc.uTex, 0);
+  }
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, scene.buffers.index);
+  gl.drawElements(gl.TRIANGLES, scene.buffers.count, scene.buffers.type, 0);
+
+  if (view.showLandmarks && scene.landmarkBuffer) {
+    gl.uniform1f(loc.uFlat, 1);
+    gl.uniform3f(loc.uFlatColor, 0.42, 0.83, 0.55);
+    gl.uniform1f(loc.uUseTex, 0);
+    gl.disable(gl.DEPTH_TEST);
+    bind(scene.landmarkBuffer, loc.aPos, 3);
+    gl.drawArrays(gl.POINTS, 0, scene.landmarks.length);
+    gl.enable(gl.DEPTH_TEST);
+  }
+  requestAnimationFrame(render);
+}
+if (gl) requestAnimationFrame(render);
+
+/* ------------------------------------------------------------------ *
+ * Interaction
+ * ------------------------------------------------------------------ */
+const pointers = new Map();
+let lastPinch = 0;
+canvas.addEventListener("pointerdown", e => {
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  lastPinch = 0;
+});
+canvas.addEventListener("pointermove", e => {
+  const previous = pointers.get(e.pointerId);
+  if (!previous) return;
+  const dx = e.clientX - previous.x, dy = e.clientY - previous.y;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 1) {
+    view.theta -= dx * 0.007;
+    view.phi = Math.max(-1.45, Math.min(1.45, view.phi + dy * 0.007));
+  } else if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    const distance = Math.hypot(a.x - b.x, a.y - b.y);
+    if (lastPinch) view.distance = Math.max(scene.radius * 0.4, Math.min(scene.radius * 12, view.distance * lastPinch / distance));
+    lastPinch = distance;
+  }
+});
+const release = e => { pointers.delete(e.pointerId); lastPinch = 0; };
+canvas.addEventListener("pointerup", release);
+canvas.addEventListener("pointercancel", release);
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  view.distance = Math.max(scene.radius * 0.4, Math.min(scene.radius * 12, view.distance * (1 + e.deltaY * 0.0015)));
+}, { passive: false });
+
+/* ------------------------------------------------------------------ *
+ * Loading files
+ * ------------------------------------------------------------------ */
+const dropView = document.getElementById("drop");
+const topBar = document.getElementById("top");
+const fileInput = document.getElementById("file");
+
+document.getElementById("pick").onclick = () => fileInput.click();
+document.getElementById("btnNew").onclick = () => fileInput.click();
+fileInput.onchange = () => { if (fileInput.files.length) loadFiles([...fileInput.files]); };
+
+["dragenter", "dragover"].forEach(name =>
+  document.addEventListener(name, e => { e.preventDefault(); dropView.hidden = false; }));
+document.addEventListener("dragleave", e => {
+  if (!e.relatedTarget && scene.mesh) dropView.hidden = true;
+});
+document.addEventListener("drop", e => {
+  e.preventDefault();
+  if (e.dataTransfer.files.length) loadFiles([...e.dataTransfer.files]);
+});
+
+async function loadFiles(files) {
+  try {
+    let meshFile = null, textureFile = null, jsonFile = null;
+    for (const file of files) {
+      const name = file.name.toLowerCase();
+      if (/\.(obj|ply|stl)$/.test(name)) meshFile = file;
+      else if (/\.(jpg|jpeg|png)$/.test(name)) textureFile = file;
+      else if (name.endsWith(".json")) jsonFile = file;
+    }
+    if (!meshFile && !jsonFile) { toast("Pick a .obj, .ply or .stl file."); return; }
+
+    if (meshFile) {
+      const name = meshFile.name.toLowerCase();
+      let mesh;
+      if (name.endsWith(".obj")) mesh = parseOBJ(await meshFile.text());
+      else if (name.endsWith(".ply")) mesh = parsePLY(await meshFile.arrayBuffer());
+      else mesh = parseSTL(await meshFile.arrayBuffer());
+      if (!mesh.positions.length) { toast("No geometry found in that file."); return; }
+      uploadMesh(mesh);
+      scene.fileName = meshFile.name;
+      scene.hasTexture = false;
+    }
+    if (textureFile) await loadTexture(textureFile);
+    if (jsonFile) loadReport(JSON.parse(await jsonFile.text()));
+
+    dropView.hidden = true;
+    topBar.hidden = false;
+    updateSheet();
+    syncButtons();
+  } catch (error) {
+    toast("Could not read that file: " + error.message);
+  }
+}
+
+function loadTexture(file) {
+  return new Promise(resolve => {
+    const image = new Image();
+    image.onload = () => {
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+      const isPowerOfTwo = n => (n & (n - 1)) === 0;
+      if (isPowerOfTwo(image.width) && isPowerOfTwo(image.height)) {
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      } else {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      }
+      scene.texture = texture;
+      scene.hasTexture = true;
+      URL.revokeObjectURL(image.src);
+      resolve();
+    };
+    image.onerror = () => resolve();
+    image.src = URL.createObjectURL(file);
+  });
+}
+
+function loadReport(json) {
+  scene.report = json;
+  scene.landmarks = (json.landmarks || []).map(l => ({ ...l }));
+  if (scene.landmarks.length && gl) {
+    const data = new Float32Array(scene.landmarks.length * 3);
+    scene.landmarks.forEach((l, i) => { data[i*3] = l.x; data[i*3+1] = l.y; data[i*3+2] = l.z; });
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    scene.landmarkBuffer = buffer;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Details sheet
+ * ------------------------------------------------------------------ */
+const sheet = document.getElementById("sheet");
+const sheetBody = document.getElementById("sheetBody");
+document.getElementById("grab").onclick = () => sheet.classList.toggle("open");
+
+document.getElementById("btnTex").onclick = () => { view.showTexture = !view.showTexture; syncButtons(); };
+document.getElementById("btnLm").onclick = () => { view.showLandmarks = !view.showLandmarks; syncButtons(); };
+document.getElementById("btnFit").onclick = () => frameScene();
+
+function syncButtons() {
+  document.getElementById("btnTex").classList.toggle("on", view.showTexture && scene.hasTexture);
+  document.getElementById("btnLm").classList.toggle("on", view.showLandmarks && scene.landmarks.length > 0);
+}
+
+function updateSheet() {
+  const parts = [];
+  if (scene.bounds) {
+    const { lo, hi } = scene.bounds;
+    const size = [hi[0]-lo[0], hi[1]-lo[1], hi[2]-lo[2]];
+    const plausible = size[0] > 90 && size[0] < 320 && size[1] > 90 && size[1] < 360;
+    parts.push(`<div class="sec"><h2>Geometry</h2>
+      ${kv("File", scene.fileName || "—")}
+      ${kv("Vertices", (scene.mesh.positions.length/3).toLocaleString())}
+      ${kv("Triangles", (scene.buffers.count/3).toLocaleString())}
+      ${kv("Width (X)", size[0].toFixed(1) + " mm")}
+      ${kv("Height (Y)", size[1].toFixed(1) + " mm")}
+      ${kv("Depth (Z)", size[2].toFixed(1) + " mm")}
+      <div class="note ${plausible ? "grn" : "amb"}">${plausible
+        ? "Bounding box is in the range a face should occupy, so the file is almost certainly in millimetres."
+        : "Bounding box is outside the range a face should occupy. Check the units — CAD will assume millimetres."}</div>
+    </div>`);
+  }
+  const report = scene.report;
+  if (report) {
+    if (report.case_code || report.capture) {
+      parts.push(`<div class="sec"><h2>Capture</h2>
+        ${kv("Case", report.case_code || "—")}
+        ${kv("Type", (report.capture && report.capture.kind_label) || "—")}
+        ${kv("Captured", (report.capture && report.capture.captured_at || "").replace("T", " ").slice(0, 16) || "—")}
+        ${kv("Frame", (report.coordinate_frame && report.coordinate_frame.name) || "—")}
+      </div>`);
+    }
+    if (report.measurements && report.measurements.length) {
+      parts.push(`<div class="sec"><h2>Measurements</h2>` +
+        report.measurements.map(m => kv(m.label, formatValue(m))).join("") + `</div>`);
+    }
+    if (scene.landmarks.length) {
+      parts.push(`<div class="sec"><h2>Landmarks (${scene.landmarks.length})</h2><div id="lmList">` +
+        scene.landmarks.map(l => `<div><span>${escapeHTML(l.label || l.id)}</span><span>${l.x.toFixed(1)}, ${l.y.toFixed(1)}, ${l.z.toFixed(1)}</span></div>`).join("") +
+        `</div></div>`);
+    }
+    if (report.warnings && report.warnings.length) {
+      parts.push(`<div class="sec"><h2>Warnings</h2>` +
+        report.warnings.map(w => `<div class="note amb">• ${escapeHTML(w)}</div>`).join("") + `</div>`);
+    }
+  } else {
+    parts.push(`<div class="note">Drop <b>landmarks.json</b> in as well to see the landmark set, the reference-plane list and the measurements.</div>`);
+  }
+  sheetBody.innerHTML = parts.join("");
+  document.getElementById("grabLabel").textContent = "Scan details";
+}
+
+const kv = (label, value) => `<div class="kv"><span>${escapeHTML(label)}</span><span>${escapeHTML(String(value))}</span></div>`;
+const formatValue = m => m.unit ? `${(+m.value).toFixed(2)} ${m.unit}` : (+m.value).toFixed(3);
+function escapeHTML(text) {
+  return String(text).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+let toastTimer = 0;
+function toast(message) {
+  const el = document.getElementById("toast");
+  el.textContent = message;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 3200);
+}
+</script>
+</body>
+</html>
