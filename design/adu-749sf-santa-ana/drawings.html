@@ -1,0 +1,1085 @@
+<title>Seven Forty-Nine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+  :root{
+    --sheet:#FBFAF6;
+    --page:#EFEBE1;
+    --ink:#1B1A16;
+    --graphite:#6B675C;
+    --rule:#CFCABB;
+    --hair:#E4E0D4;
+    --redline:#A9331F;
+    --field:#4C6A44;
+    --tint:rgba(27,26,22,.045);
+    --shadow:0 1px 0 rgba(27,26,22,.10), 0 12px 28px -18px rgba(27,26,22,.45);
+    --f-disp:"Archivo Narrow","Arial Narrow",system-ui,sans-serif;
+    --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --sheet:#191811;
+      --page:#0F0F0A;
+      --ink:#EDE9DC;
+      --graphite:#A29C89;
+      --rule:#3B392E;
+      --hair:#2A2820;
+      --redline:#E2836A;
+      --field:#96B981;
+      --tint:rgba(237,233,220,.05);
+      --shadow:0 1px 0 rgba(0,0,0,.5), 0 14px 30px -18px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    --sheet:#191811;
+    --page:#0F0F0A;
+    --ink:#EDE9DC;
+    --graphite:#A29C89;
+    --rule:#3B392E;
+    --hair:#2A2820;
+    --redline:#E2836A;
+    --field:#96B981;
+    --tint:rgba(237,233,220,.05);
+    --shadow:0 1px 0 rgba(0,0,0,.5), 0 14px 30px -18px rgba(0,0,0,.9);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--page);
+    color:var(--ink);
+    font-family:var(--f-body);
+    font-size:16px;
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1140px;margin:0 auto;padding:0 20px 96px}
+
+  /* ---------- title block header ---------- */
+  .masthead{
+    border-bottom:1.5px solid var(--ink);
+    padding:44px 0 18px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:24px 40px;
+    align-items:end;
+  }
+  .project-no{
+    font-family:var(--f-mono);
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--graphite);
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:var(--f-disp);
+    font-weight:700;
+    font-size:clamp(40px,7.5vw,76px);
+    line-height:.95;
+    letter-spacing:-.015em;
+    text-transform:uppercase;
+    margin:0;
+    text-wrap:balance;
+  }
+  h1 .thin{font-weight:400;color:var(--graphite)}
+  .masthead .sub{
+    font-size:17px;
+    color:var(--graphite);
+    margin:14px 0 0;
+    max-width:44ch;
+  }
+  .stamp{
+    font-family:var(--f-mono);
+    font-size:11px;
+    line-height:1.75;
+    letter-spacing:.04em;
+    color:var(--graphite);
+    text-align:right;
+    white-space:nowrap;
+  }
+  .stamp b{color:var(--ink);font-weight:600}
+
+  /* ---------- key figures ---------- */
+  .figures{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+    border-bottom:1px solid var(--rule);
+  }
+  .fig{padding:20px 20px 22px 0}
+  .fig + .fig{border-left:1px solid var(--hair);padding-left:20px}
+  .fig .n{
+    font-family:var(--f-disp);
+    font-weight:600;
+    font-size:31px;
+    line-height:1.05;
+    letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;
+    display:block;
+  }
+  .fig .l{
+    font-family:var(--f-mono);
+    font-size:10px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--graphite);
+    display:block;
+    margin-top:7px;
+  }
+
+  /* ---------- prose ---------- */
+  .col{max-width:66ch}
+  h2{
+    font-family:var(--f-disp);
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    font-size:26px;
+    line-height:1.15;
+    margin:0 0 6px;
+    text-wrap:balance;
+  }
+  h3{
+    font-family:var(--f-disp);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    font-size:14px;
+    margin:30px 0 8px;
+  }
+  p{margin:0 0 15px}
+  .lede{font-size:18.5px}
+  section{padding:52px 0 0}
+  .eyebrow{
+    font-family:var(--f-mono);
+    font-size:10.5px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--redline);
+    margin:0 0 12px;
+  }
+  strong{font-weight:600}
+  .num{font-family:var(--f-mono);font-size:.92em;font-variant-numeric:tabular-nums}
+  a{color:var(--ink)}
+
+  /* ---------- sheets ---------- */
+  .sheet{
+    background:var(--sheet);
+    border:1px solid var(--rule);
+    box-shadow:var(--shadow);
+    margin:28px 0 0;
+  }
+  .sheet-body{padding:26px 26px 8px;overflow-x:auto}
+  .sheet svg{display:block;width:100%;height:auto;min-width:480px}
+  .titleblock{
+    border-top:1px solid var(--rule);
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    gap:0;
+    font-family:var(--f-mono);
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--graphite);
+  }
+  .titleblock > div{padding:11px 16px;border-left:1px solid var(--hair)}
+  .titleblock > div:first-child{border-left:0;flex:1 1 220px;min-width:200px}
+  .titleblock .tb-name{color:var(--ink);font-weight:600;letter-spacing:.09em}
+  .titleblock .tb-no{
+    font-weight:600;color:var(--ink);
+    background:var(--tint);
+  }
+
+  /* ---------- drawing primitives ---------- */
+  .poche{fill:var(--ink)}
+  .void{fill:var(--sheet)}
+  .lt{fill:none;stroke:var(--ink);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+  .md{fill:none;stroke:var(--graphite);stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
+  .hairline{fill:none;stroke:var(--rule);stroke-width:.9}
+  .dash{fill:none;stroke:var(--redline);stroke-width:1.2;stroke-dasharray:9 6}
+  .dashg{fill:none;stroke:var(--graphite);stroke-width:1;stroke-dasharray:6 5}
+  .glass{fill:none;stroke:var(--graphite);stroke-width:1.5}
+  .fillsoft{fill:var(--tint);stroke:none}
+  .green{fill:none;stroke:var(--field);stroke-width:1.1}
+  .greenfill{fill:var(--field);opacity:.12}
+  .dimline{fill:none;stroke:var(--graphite);stroke-width:.9}
+  text{font-family:var(--f-disp);fill:var(--ink)}
+  .rm{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;text-anchor:middle}
+  .rmsub{font-family:var(--f-mono);font-size:8.6px;fill:var(--graphite);letter-spacing:.05em;text-anchor:middle}
+  .dim{font-family:var(--f-mono);font-size:9px;fill:var(--graphite);letter-spacing:.02em;text-anchor:middle}
+  .tag{font-family:var(--f-mono);font-size:8.4px;fill:var(--graphite);letter-spacing:.07em;text-transform:uppercase}
+  .tagr{font-family:var(--f-mono);font-size:8.4px;fill:var(--redline);letter-spacing:.07em;text-transform:uppercase}
+  .lvl{font-family:var(--f-mono);font-size:8.6px;fill:var(--graphite);letter-spacing:.03em}
+
+  /* ---------- tables ---------- */
+  .tablewrap{overflow-x:auto;margin:20px 0 0;border-top:1.5px solid var(--ink)}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:14.5px}
+  th{
+    font-family:var(--f-disp);
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.09em;
+    font-size:11px;
+    color:var(--graphite);
+    text-align:left;
+    padding:11px 14px 11px 0;
+    border-bottom:1px solid var(--rule);
+    white-space:nowrap;
+  }
+  td{
+    padding:12px 14px 12px 0;
+    border-bottom:1px solid var(--hair);
+    vertical-align:top;
+  }
+  td:first-child{width:23%;font-weight:600}
+  td.code{font-family:var(--f-mono);font-size:12px;color:var(--graphite);white-space:nowrap;width:16%}
+  td.prov{font-variant-numeric:tabular-nums}
+  .ok{
+    font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--field);white-space:nowrap;
+  }
+  .ck{color:var(--redline)}
+
+  /* ---------- redline notes ---------- */
+  .redlines{
+    border-left:2px solid var(--redline);
+    padding-left:22px;
+    margin-top:22px;
+    max-width:72ch;
+  }
+  .redlines ol{margin:0;padding-left:20px}
+  .redlines li{margin:0 0 13px}
+  .redlines li::marker{font-family:var(--f-mono);font-size:12px;color:var(--redline)}
+
+  .legend{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:14px 28px;margin:22px 0 0;
+  }
+  .legend div{
+    font-family:var(--f-mono);font-size:11.5px;line-height:1.6;color:var(--graphite);
+    border-top:1px solid var(--rule);padding-top:9px;
+  }
+  .legend b{font-family:var(--f-disp);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);display:block}
+
+  footer{
+    margin-top:64px;padding-top:20px;border-top:1.5px solid var(--ink);
+    font-family:var(--f-mono);font-size:11px;line-height:1.85;color:var(--graphite);
+    letter-spacing:.03em;max-width:84ch;
+  }
+  @media (max-width:640px){
+    .masthead{grid-template-columns:1fr}
+    .stamp{text-align:left}
+    .fig + .fig{border-left:0;padding-left:0}
+    .sheet-body{padding:16px 14px 6px}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    a:focus-visible,summary:focus-visible{outline:2px solid var(--redline);outline-offset:3px}
+  }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div>
+    <p class="project-no">Project 26&#8209;014 &nbsp;·&nbsp; Detached Accessory Dwelling Unit &nbsp;·&nbsp; Santa Ana, CA</p>
+    <h1>Seven<br>Forty&#8209;Nine</h1>
+    <p class="sub">A two-bedroom detached ADU sized one square foot under the line where California impact fees begin.</p>
+  </div>
+  <div class="stamp">
+    <b>DESIGN DEVELOPMENT</b><br>
+    Issue 01 &nbsp;·&nbsp; 01 SEP 2026<br>
+    <br>
+    Zone <b>R1</b> Single&#8209;Family<br>
+    Lot <b>50&#8242;&#8209;0&#8243; × 135&#8242;&#8209;0&#8243;</b> / 6,750 SF<br>
+    Code <b>2025 CRC · SAMC 41&#8209;194</b><br>
+    Climate Zone <b>8</b> · SDC <b>D</b>
+  </div>
+</header>
+
+<div class="figures">
+  <div class="fig"><span class="n">749</span><span class="l">SF enclosed</span></div>
+  <div class="fig"><span class="n">663</span><span class="l">SF net livable</span></div>
+  <div class="fig"><span class="n">2 / 1</span><span class="l">bed / bath</span></div>
+  <div class="fig"><span class="n">28&#8242;×27&#8242;6&#8243;</span><span class="l">footprint</span></div>
+  <div class="fig"><span class="n">14&#8242;&#8209;6&#8243;</span><span class="l">height to ridge</span></div>
+  <div class="fig"><span class="n">34%</span><span class="l">lot coverage</span></div>
+</div>
+
+<section>
+  <div class="col">
+    <p class="eyebrow">The brief</p>
+    <h2>One square foot is the whole argument</h2>
+    <p class="lede">California prohibits any impact fee on an accessory dwelling unit of 750 square feet or less. Above that line, fees are charged proportionally against the primary dwelling &mdash; in Orange County commonly five figures. So the unit is drawn at <strong>749 square feet</strong>, measured to the <em>outside</em> face of the exterior walls, which is the most conservative reading a plan checker can apply. Under the interior-livable-space measure the city actually uses, it comes in at 663 SF, with 86 SF of margin.</p>
+    <p>Everything else follows from three site facts. The lot is a standard Santa Ana R1 parcel, 50 feet wide and 135 deep, with the house at the street and a detached garage mid-lot. The rear yard is deep enough that the ADU does not need the four-foot setback concession &mdash; and that turns out to be the second design decision worth making.</p>
+
+    <h3>Why the setbacks are six feet, not four</h3>
+    <p>Santa Ana allows a new detached ADU at a 4&#8242;&#8209;0&#8243; rear and interior side setback. Taking it caps the building at 16 feet and, more expensively, puts two walls inside the fire-separation distance where <span class="num">CRC Table R302.1(1)</span> demands one-hour rated assemblies, limits openings to 25% of wall area, and requires protected eaves.</p>
+    <p>Pushing the building to <strong>6&#8242;&#8209;0&#8243; on the east side and rear</strong> puts every wall and every eave edge at 5&#8242;&#8209;0&#8243; or more from a property line. No rated assemblies. No opening-area limit. Ordinary eaves. The cost is two feet of rear yard the lot can easily spare; the saving is real construction money and a much easier plan check.</p>
+
+    <h3>How it is organized</h3>
+    <p>The plan is a simple bar, long side east&ndash;west, with the great room across the north face looking back at the main house and both bedrooms across the rear. Circulation is a single 4&#8242;-deep vestibule &mdash; 26 SF, 3.5% of the floor area &mdash; that touches both bedrooms and the bath. The entry is a 5&#8242;&#8209;3&#8243; &times; 4&#8242;&#8209;0&#8243; notch cut out of the northwest corner: it makes a covered landing without adding roof area, and because it is carved out rather than added on, it is what brings the footprint from 770 SF down to exactly 749.</p>
+    <p>Private outdoor space sits on the west, the 16&#8242; side yard, where a 12&#8242; &times; 14&#8242; patio sits off a 6&#8242; slider. Santa Ana is Climate Zone 8 and that west exposure is the hot one, so it is shaded by a 6&#8242;-deep trellis rather than left open.</p>
+  </div>
+</section>
+
+<style>
+  .sheet svg.tall{width:auto;height:830px;max-width:100%;min-width:0;margin:0 auto}
+  @media (max-width:700px){.sheet svg.tall{height:620px}}
+</style>
+
+<section>
+  <p class="eyebrow">Sheet A&#8209;1.0</p>
+  <h2>Site plan</h2>
+  <div class="col"><p>The ADU sits at the rear, 6&#8242;&#8209;0&#8243; off the east and rear property lines &mdash; two feet more than Santa Ana requires, which is what keeps every wall and eave out of the fire-separation zone. The dashed red line is the 4&#8242;&#8209;0&#8243; minimum the code would have allowed.</p></div>
+
+  <div class="sheet">
+    <div class="sheet-body">
+      <svg class="tall" viewBox="-210 -230 780 1480" role="img" aria-label="Site plan of a 50 by 135 foot Santa Ana R1 lot showing the existing house at the street, a detached garage mid-lot, and the new 749 square foot ADU at the rear with six foot side and rear setbacks">
+        <line class="hairline" x1="-190" y1="-96" x2="540" y2="-96"/>
+        <line class="hairline" x1="-190" y1="-56" x2="540" y2="-56"/>
+        <line class="hairline" x1="-190" y1="-24" x2="540" y2="-24"/>
+        <text class="tag" x="-190" y="-186">PUBLIC STREET &#183; FIRE APPARATUS ACCESS</text>
+        <text class="tag" x="412" y="-104">FACE OF CURB</text>
+        <text class="tag" x="412" y="-32">SIDEWALK</text>
+
+        <g class="dimline">
+          <line x1="0" y1="-140" x2="400" y2="-140"/>
+          <line x1="0" y1="-148" x2="0" y2="-132"/><line x1="400" y1="-148" x2="400" y2="-132"/>
+        </g>
+        <text class="dim" x="200" y="-152">50&#8242;&#8209;0&#8243;</text>
+
+        <rect class="lt" x="0" y="0" width="400" height="1080" style="stroke-width:2.4"/>
+        <text class="tag" x="4" y="-8">PROPERTY LINE &#8212; 50&#8242;&#8209;0&#8243; &#215; 135&#8242;&#8209;0&#8243; = 6,750 SF</text>
+
+        <rect class="fillsoft" x="8" y="-96" width="80" height="784"/>
+        <rect class="hairline" x="8" y="-96" width="80" height="784"/>
+        <rect class="fillsoft" x="88" y="496" width="80" height="192"/>
+        <rect class="hairline" x="88" y="496" width="80" height="192"/>
+        <rect class="dashg" x="12" y="320" width="72" height="144"/>
+        <text class="tag" x="-190" y="392">EXISTING DRIVEWAY &#8212; 1 UNCOVERED</text>
+        <text class="tag" x="-190" y="412">9&#8242;&#215;18&#8242; SPACE FOR THE ADU</text>
+        <line class="dimline" x1="-40" y1="398" x2="8" y2="398"/>
+
+        <rect class="fillsoft" x="112" y="160" width="224" height="328"/>
+        <rect class="lt" x="112" y="160" width="224" height="328"/>
+        <text class="rm" x="224" y="316">EXISTING HOUSE</text>
+        <text class="rmsub" x="224" y="338">1,148 SF &#183; 3 BD</text>
+
+        <rect class="fillsoft" x="8" y="528" width="160" height="160"/>
+        <rect class="lt" x="8" y="528" width="160" height="160"/>
+        <text class="rm" x="88" y="598">GARAGE</text>
+        <text class="rmsub" x="88" y="620">400 SF</text>
+
+        <line class="dash" x1="368" y1="700" x2="368" y2="1064"/>
+        <line class="dash" x1="60" y1="1048" x2="384" y2="1048"/>
+        <text class="tagr" x="390" y="960" transform="rotate(-90 390 960)">4&#8242;&#8209;0&#8243; MIN. PER SAMC 41&#8209;194</text>
+        <text class="tagr" x="62" y="1072">4&#8242;&#8209;0&#8243; MIN. PER SAMC 41&#8209;194</text>
+
+        <rect class="greenfill" x="32" y="832" width="96" height="112"/>
+        <rect class="green" x="32" y="832" width="96" height="112"/>
+        <line class="dashg" x1="32" y1="856" x2="128" y2="856"/>
+        <line class="dashg" x1="32" y1="888" x2="128" y2="888"/>
+        <line class="dashg" x1="32" y1="920" x2="128" y2="920"/>
+        <text class="tag" x="-190" y="882">PRIVATE PATIO 12&#8242;&#215;14&#8242;</text>
+        <text class="tag" x="-190" y="902">6&#8242; TRELLIS OVER &#8212; WEST SHADE</text>
+        <line class="dimline" x1="-40" y1="888" x2="28" y2="888"/>
+
+        <path class="dashg" d="M88 688 L88 824 L148 824"/>
+        <text class="tag" x="-190" y="732">3&#8242;&#8209;6&#8243; PATH OF TRAVEL</text>
+        <text class="tag" x="-190" y="752">HOSE PULL FROM CURB &#8776; 129&#8242;</text>
+        <line class="dimline" x1="-40" y1="740" x2="84" y2="740"/>
+
+        <path class="poche" fill-rule="evenodd"
+              d="M170,812 L352,812 L352,1032 L128,1032 L128,844 L170,844 Z
+                 M174,816 L348,816 L348,1028 L132,1028 L132,848 L174,848 Z"/>
+        <rect class="fillsoft" x="132" y="816" width="216" height="212"/>
+        <text class="rm" x="240" y="900">NEW ADU</text>
+        <text class="rmsub" x="240" y="922">749 SF &#183; 2 BD / 1 BA</text>
+        <text class="rmsub" x="240" y="940">28&#8242;&#8209;0&#8243; &#215; 27&#8242;&#8209;6&#8243;</text>
+        <text class="rmsub" x="240" y="958">RIDGE 14&#8242;&#8209;6&#8243; ABOVE GRADE</text>
+        <text class="tag" x="134" y="838">ENTRY</text>
+
+        <rect class="hairline" x="192" y="1032" width="24" height="20"/>
+        <text class="tag" x="222" y="1070">HPWH ON PAD</text>
+
+        <g class="dimline">
+          <line x1="352" y1="792" x2="400" y2="792"/>
+          <line x1="352" y1="784" x2="352" y2="800"/><line x1="400" y1="784" x2="400" y2="812"/>
+          <line x1="0" y1="792" x2="128" y2="792"/>
+          <line x1="0" y1="784" x2="0" y2="800"/><line x1="128" y1="784" x2="128" y2="812"/>
+          <line x1="440" y1="1032" x2="440" y2="1080"/>
+          <line x1="432" y1="1032" x2="448" y2="1032"/><line x1="432" y1="1080" x2="448" y2="1080"/>
+          <line x1="440" y1="812" x2="440" y2="1032"/>
+          <line x1="432" y1="812" x2="448" y2="812"/>
+          <line x1="440" y1="688" x2="440" y2="812"/>
+          <line x1="432" y1="688" x2="448" y2="688"/>
+        </g>
+        <text class="dim" x="376" y="778">6&#8242;&#8209;0&#8243;</text>
+        <text class="dim" x="64" y="778">16&#8242;&#8209;0&#8243;</text>
+        <text class="dim" x="480" y="1060">6&#8242;&#8209;0&#8243;</text>
+        <text class="dim" x="484" y="926">27&#8242;&#8209;6&#8243;</text>
+        <text class="dim" x="484" y="748">15&#8242;&#8209;6&#8243;</text>
+        <text class="tag" x="458" y="768">SEPARATION</text>
+
+        <circle class="green" cx="360" cy="240" r="40"/>
+        <circle class="green" cx="360" cy="240" r="18"/>
+        <circle class="green" cx="52" cy="742" r="24"/>
+
+        <g transform="translate(522,-146)">
+          <circle class="md" cx="0" cy="0" r="34"/>
+          <path class="poche" d="M0,-30 L9,8 L0,1 L-9,8 Z"/>
+          <text class="rm" x="0" y="-46">N</text>
+        </g>
+
+        <g transform="translate(-190,1160)">
+          <rect class="poche" x="0" y="0" width="80" height="7"/>
+          <rect class="hairline" x="80" y="0" width="80" height="7"/>
+          <rect class="poche" x="160" y="0" width="160" height="7"/>
+          <text class="dim" x="0" y="28">0</text>
+          <text class="dim" x="160" y="28">20&#8242;</text>
+          <text class="dim" x="320" y="28">40&#8242;</text>
+          <text class="tag" x="352" y="8">GRAPHIC SCALE</text>
+        </g>
+      </svg>
+    </div>
+    <div class="titleblock">
+      <div><span class="tb-name">Site Plan</span> &nbsp;/&nbsp; Existing + Proposed</div>
+      <div>Scale 1&#8243; = 10&#8242;&#8209;0&#8243;</div>
+      <div>North &#8593;</div>
+      <div class="tb-no">A&#8209;1.0</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div><b>Lot coverage</b>1,148 house + 400 garage + 749 ADU = 2,297 SF on 6,750 SF &rarr; 34.0%, against a 50% R1 maximum.</div>
+    <div><b>Fire access</b>Hose pull from the curb along the drive and path to the ADU entry measures about 129&#8242;, inside the 150&#8242; limit. Confirm with SAFD.</div>
+    <div><b>Parking</b>One 9&#8242;&#215;18&#8242; uncovered space beside the garage. Waived outright if the parcel is within &frac12; mile walking distance of transit.</div>
+    <div><b>Drainage</b>Site slopes 2% away from the ADU for the first 10&#8242; per CRC R401.3; roof leaders to a rear-yard dry well.</div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Sheet A&#8209;2.0</p>
+  <h2>Floor plan</h2>
+  <div class="col"><p>663 SF of net livable area inside a 749 SF enclosure &mdash; 88.5% efficiency, which is high for a two-bedroom, and comes from spending only 26 SF on circulation. Both sleeping rooms take their emergency escape opening from a casement, not a slider: a 3&#8242;&#215;4&#8242; horizontal slider clears roughly 5.5 SF and fails <span class="num">CRC R310.2.1</span>; the same casement clears about 9.8 SF.</p></div>
+
+  <div class="sheet">
+    <div class="sheet-body">
+      <svg viewBox="-250 -120 880 650" role="img" aria-label="Floor plan of the 749 square foot ADU: great room across the north with kitchen at the northeast, a covered entry notch at the northwest, two bedrooms across the south flanking a central bath, and a small hall">
+
+        <!-- ===== exterior wall poche ===== -->
+        <path class="poche" fill-rule="evenodd"
+          d="M63,0 L336,0 L336,330 L0,330 L0,48 L63,48 Z
+             M70,7 L329,7 L329,323 L7,323 L7,55 L70,55 Z"/>
+
+        <!-- ===== interior partitions ===== -->
+        <rect class="poche" x="7" y="156" width="117.5" height="4.5"/>
+        <rect class="poche" x="166.5" y="156" width="162.5" height="4.5"/>
+        <rect class="poche" x="120" y="160.5" width="4.5" height="162.5"/>
+        <rect class="poche" x="209" y="160.5" width="4.5" height="162.5"/>
+        <rect class="poche" x="124.5" y="204" width="84.5" height="4.5"/>
+        <rect class="poche" x="285" y="108" width="44" height="4"/>
+        <rect class="poche" x="280.5" y="108" width="4.5" height="48"/>
+
+        <!-- ===== openings knocked out ===== -->
+        <g class="void">
+          <rect x="120" y="0" width="48" height="7"/>
+          <rect x="248" y="0" width="48" height="7"/>
+          <rect x="8" y="48" width="36" height="7"/>
+          <rect x="47" y="48" width="14" height="7"/>
+          <rect x="0" y="78" width="7" height="72"/>
+          <rect x="0" y="186" width="7" height="36"/>
+          <rect x="0" y="250" width="7" height="36"/>
+          <rect x="329" y="74" width="7" height="36"/>
+          <rect x="329" y="186" width="7" height="36"/>
+          <rect x="329" y="262" width="7" height="36"/>
+          <rect x="160" y="323" width="36" height="7"/>
+          <rect x="264" y="323" width="36" height="7"/>
+          <rect x="120" y="165" width="4.5" height="32"/>
+          <rect x="209" y="165" width="4.5" height="32"/>
+          <rect x="128" y="204" width="30" height="4.5"/>
+          <rect x="289" y="108" width="36" height="4"/>
+        </g>
+
+        <!-- ===== glazing lines ===== -->
+        <g class="glass">
+          <line x1="120" y1="3.5" x2="168" y2="3.5"/>
+          <line x1="248" y1="3.5" x2="296" y2="3.5"/>
+          <line x1="3.5" y1="78" x2="3.5" y2="150"/>
+          <line x1="3.5" y1="186" x2="3.5" y2="222"/>
+          <line x1="3.5" y1="250" x2="3.5" y2="286"/>
+          <line x1="332.5" y1="74" x2="332.5" y2="110"/>
+          <line x1="332.5" y1="186" x2="332.5" y2="222"/>
+          <line x1="332.5" y1="262" x2="332.5" y2="298"/>
+          <line x1="160" y1="326.5" x2="196" y2="326.5"/>
+          <line x1="264" y1="326.5" x2="300" y2="326.5"/>
+          <line x1="47" y1="51.5" x2="61" y2="51.5"/>
+        </g>
+
+        <!-- ===== doors ===== -->
+        <g class="md">
+          <path d="M8,51.5 L8,87.5"/>
+          <path d="M44,51.5 A36,36 0 0,1 8,87.5"/>
+          <path d="M122.25,197 L90.25,197"/>
+          <path d="M122.25,165 A32,32 0 0,0 90.25,197"/>
+          <path d="M211.25,197 L243.25,197"/>
+          <path d="M211.25,165 A32,32 0 0,1 243.25,197"/>
+          <path d="M128,206.25 L128,236.25"/>
+          <path d="M158,206.25 A30,30 0 0,1 128,236.25"/>
+          <path d="M289,113 L307,117 M307,113 L325,117"/>
+        </g>
+
+        <!-- ===== kitchen ===== -->
+        <g class="hairline">
+          <rect x="304" y="7" width="25" height="103"/>
+          <rect x="240" y="7" width="64" height="25"/>
+          <rect x="232" y="48" width="30" height="72"/>
+          <line x1="304" y1="40" x2="329" y2="40"/>
+          <line x1="304" y1="44" x2="329" y2="44"/>
+          <line x1="304" y1="74" x2="329" y2="74"/>
+          <rect x="307" y="78" width="19" height="28" rx="2"/>
+          <circle cx="311" cy="52" r="4"/><circle cx="322" cy="52" r="4"/>
+          <circle cx="311" cy="66" r="4"/><circle cx="322" cy="66" r="4"/>
+          <rect x="250" y="7" width="24" height="25"/>
+          <rect x="292" y="116" width="25" height="24" rx="2"/>
+          <line x1="292" y1="128" x2="317" y2="128"/>
+        </g>
+
+        <!-- ===== bath fixtures ===== -->
+        <g class="hairline">
+          <rect x="149" y="291" width="60" height="32" rx="3"/>
+          <rect x="153" y="294" width="52" height="26" rx="6"/>
+          <rect x="124.5" y="243" width="21" height="60"/>
+          <ellipse cx="135" cy="273" rx="8" ry="11"/>
+          <rect x="173.5" y="208.5" width="19" height="8" rx="1"/>
+          <ellipse cx="183" cy="226" rx="8.5" ry="11"/>
+        </g>
+
+        <!-- ===== closets ===== -->
+        <g class="hairline">
+          <rect x="20" y="296" width="72" height="27"/>
+          <line x1="20" y1="299" x2="58" y2="299"/>
+          <line x1="54" y1="303" x2="92" y2="303"/>
+          <rect x="213.5" y="250" width="24" height="66"/>
+          <line x1="234" y1="250" x2="234" y2="288"/>
+          <line x1="230" y1="284" x2="230" y2="316"/>
+        </g>
+
+        <!-- ===== furniture (indicative) ===== -->
+        <g class="hairline" opacity=".85">
+          <rect x="25" y="195" width="60" height="80" rx="3"/>
+          <line x1="25" y1="213" x2="85" y2="213"/>
+          <rect x="245" y="190" width="60" height="80" rx="3"/>
+          <line x1="245" y1="208" x2="305" y2="208"/>
+          <rect x="22" y="118" width="84" height="32" rx="3"/>
+          <rect x="128" y="40" width="60" height="36" rx="2"/>
+        </g>
+
+        <!-- ===== room labels ===== -->
+        <text class="rm" x="112" y="96">GREAT ROOM</text>
+        <text class="rmsub" x="112" y="109">LIVING &#183; DINING &#183; KITCHEN</text>
+        <text class="rmsub" x="112" y="121">299 SF</text>
+
+        <text class="rm" x="63" y="176">BEDROOM 1</text>
+        <text class="rmsub" x="63" y="188">127 SF</text>
+
+        <text class="rm" x="271" y="170">BEDROOM 2</text>
+        <text class="rmsub" x="271" y="182">130 SF</text>
+
+        <text class="rm" x="166" y="178">HALL</text>
+        <text class="rmsub" x="166" y="190">26 SF</text>
+
+        <text class="rm" x="178" y="262">BATH</text>
+        <text class="rmsub" x="178" y="274">67 SF</text>
+
+        <text class="rmsub" x="307" y="152">UTIL.</text>
+
+        <!-- ===== annotation tags ===== -->
+        <g text-anchor="end">
+          <text class="tag" x="-76" y="44">COVERED ENTRY 5&#8242;&#8209;3&#8243; &#215; 4&#8242;&#8209;0&#8243;</text>
+          <text class="tag" x="-76" y="114">6&#8242;&#8209;0&#8243; SLIDER TO PATIO</text>
+          <text class="tagr" x="-76" y="176">EGRESS CASEMENT 3&#8242;&#8209;0&#8243;&#215;4&#8242;&#8209;0&#8243;</text>
+          <text class="tagr" x="-76" y="188">9.8 SF NET CLEAR &#183; CRC R310</text>
+          <text class="tag" x="-76" y="290">CASEMENT 3&#8242;&#8209;0&#8243;&#215;4&#8242;&#8209;0&#8243;</text>
+        </g>
+        <text class="tag" x="424" y="96">SINK &#183; WINDOW OVER</text>
+        <text class="tagr" x="424" y="140">EAST WALL 6&#8242;&#8209;0&#8243; TO P.L.</text>
+        <text class="tagr" x="424" y="152">NO RATED ASSEMBLY REQ&#8217;D</text>
+        <text class="tagr" x="424" y="176">EGRESS CASEMENT 3&#8242;&#8209;0&#8243;&#215;4&#8242;&#8209;0&#8243;</text>
+        <text class="tagr" x="424" y="188">9.8 SF NET CLEAR &#183; CRC R310</text>
+        <text class="tag" x="424" y="290">3&#8242;&#8209;0&#8243;&#215;4&#8242;&#8209;0&#8243; AWNING</text>
+        <text class="tag" x="7" y="424">BATH &#8212; OBSCURE TEMPERED AWNING, SILL 5&#8242;&#8209;0&#8243; &#183; CRC R308.4.5</text>
+
+        <!-- ===== dimension strings ===== -->
+        <g class="dimline">
+          <line x1="0" y1="-14" x2="0" y2="-62"/>
+          <line x1="63" y1="-14" x2="63" y2="-36"/>
+          <line x1="336" y1="-14" x2="336" y2="-62"/>
+          <line x1="0" y1="-56" x2="336" y2="-56"/>
+          <line x1="0" y1="-30" x2="336" y2="-30"/>
+          <line x1="0" y1="-62" x2="0" y2="-50"/>
+          <line x1="336" y1="-62" x2="336" y2="-50"/>
+          <line x1="63" y1="-36" x2="63" y2="-24"/>
+
+          <line x1="-14" y1="0" x2="-62" y2="0"/>
+          <line x1="-14" y1="48" x2="-36" y2="48"/>
+          <line x1="-14" y1="330" x2="-62" y2="330"/>
+          <line x1="-56" y1="0" x2="-56" y2="330"/>
+          <line x1="-30" y1="0" x2="-30" y2="330"/>
+
+          <line x1="7" y1="344" x2="7" y2="392"/>
+          <line x1="120" y1="344" x2="120" y2="392"/>
+          <line x1="124.5" y1="344" x2="124.5" y2="392"/>
+          <line x1="209" y1="344" x2="209" y2="392"/>
+          <line x1="213.5" y1="344" x2="213.5" y2="392"/>
+          <line x1="329" y1="344" x2="329" y2="392"/>
+          <line x1="7" y1="386" x2="329" y2="386"/>
+
+          <line x1="350" y1="7" x2="398" y2="7"/>
+          <line x1="350" y1="156" x2="398" y2="156"/>
+          <line x1="350" y1="160.5" x2="398" y2="160.5"/>
+          <line x1="350" y1="204" x2="398" y2="204"/>
+          <line x1="350" y1="208.5" x2="398" y2="208.5"/>
+          <line x1="350" y1="323" x2="398" y2="323"/>
+          <line x1="392" y1="7" x2="392" y2="323"/>
+        </g>
+        <text class="dim" x="168" y="-66">28&#8242;&#8209;0&#8243;</text>
+        <text class="dim" x="31" y="-34">5&#8242;&#8209;3&#8243;</text>
+        <text class="dim" x="200" y="-34">22&#8242;&#8209;9&#8243;</text>
+        <text class="dim" x="-70" y="165" transform="rotate(-90 -70 165)">27&#8242;&#8209;6&#8243;</text>
+        <text class="dim" x="-44" y="24" transform="rotate(-90 -44 24)">4&#8242;&#8209;0&#8243;</text>
+        <text class="dim" x="-44" y="189" transform="rotate(-90 -44 189)">23&#8242;&#8209;6&#8243;</text>
+        <text class="dim" x="63" y="382">9&#8242;&#8209;5&#8243;</text>
+        <text class="dim" x="167" y="382">7&#8242;&#8209;0&#189;&#8243;</text>
+        <text class="dim" x="271" y="382">9&#8242;&#8209;7&#189;&#8243;</text>
+        <text class="dim" x="406" y="85" transform="rotate(-90 406 85)">12&#8242;&#8209;5&#8243;</text>
+        <text class="dim" x="406" y="186" transform="rotate(-90 406 186)">3&#8242;&#8209;7&#189;&#8243;</text>
+        <text class="dim" x="406" y="270" transform="rotate(-90 406 270)">9&#8242;&#8209;6&#189;&#8243;</text>
+
+        <!-- north arrow -->
+        <g transform="translate(470,-80)">
+          <circle class="md" cx="0" cy="0" r="22"/>
+          <path class="poche" d="M0,-19 L6,6 L0,1 L-6,6 Z"/>
+          <text class="rm" x="0" y="-28">N</text>
+        </g>
+
+        <!-- scale bar -->
+        <g transform="translate(7,470)">
+          <rect class="poche" x="0" y="0" width="48" height="5"/>
+          <rect class="hairline" x="48" y="0" width="48" height="5"/>
+          <rect class="poche" x="96" y="0" width="96" height="5"/>
+          <text class="dim" x="0" y="20">0</text>
+          <text class="dim" x="96" y="20">8&#8242;</text>
+          <text class="dim" x="192" y="20">16&#8242;</text>
+        </g>
+      </svg>
+    </div>
+    <div class="titleblock">
+      <div><span class="tb-name">Floor Plan</span> &nbsp;/&nbsp; Level 1, slab on grade</div>
+      <div>Scale &#188;&#8243; = 1&#8242;&#8209;0&#8243;</div>
+      <div>Ceilings 9&#8242;&#8209;0&#8243; / vaulted to 12&#8242;&#8209;8&#8243;</div>
+      <div class="tb-no">A&#8209;2.0</div>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Room</th><th>Clear dimensions</th><th>Area</th><th>Light / vent glazing</th><th>Test</th></tr></thead>
+      <tbody>
+        <tr><td>Great room</td><td class="prov">26&#8242;&#8209;10&#8243; &#215; 12&#8242;&#8209;5&#8243;</td><td class="prov">299 SF</td><td class="prov">89 SF (30%)</td><td><span class="ok">8% req &#183; ok</span></td></tr>
+        <tr><td>Bedroom 1</td><td class="prov">9&#8242;&#8209;5&#8243; &#215; 13&#8242;&#8209;6&#8243;</td><td class="prov">127 SF</td><td class="prov">24 SF (19%)</td><td><span class="ok">8% req &#183; ok</span></td></tr>
+        <tr><td>Bedroom 2</td><td class="prov">9&#8242;&#8209;7&#189;&#8243; &#215; 13&#8242;&#8209;6&#8243;</td><td class="prov">130 SF</td><td class="prov">24 SF (18%)</td><td><span class="ok">8% req &#183; ok</span></td></tr>
+        <tr><td>Bath</td><td class="prov">7&#8242;&#8209;0&#189;&#8243; &#215; 9&#8242;&#8209;6&#189;&#8243;</td><td class="prov">67 SF</td><td class="prov">6 SF + 80 cfm fan</td><td><span class="ok">R303.3 exc. &#183; ok</span></td></tr>
+        <tr><td>Hall</td><td class="prov">3&#8242;&#8209;7&#189;&#8243; wide</td><td class="prov">26 SF</td><td class="prov">&#8212;</td><td><span class="ok">3&#8242;&#8209;0&#8243; min &#183; ok</span></td></tr>
+        <tr><td>Utility</td><td class="prov">3&#8242;&#8209;8&#8243; &#215; 3&#8242;&#8209;8&#8243;</td><td class="prov">13 SF</td><td class="prov">&#8212;</td><td><span class="ok">stacked W/D</span></td></tr>
+        <tr><td><strong>Net livable</strong></td><td class="prov">&#8212;</td><td class="prov"><strong>663 SF</strong></td><td class="prov">&#8212;</td><td><span class="ok">88.5% eff.</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Sheet A&#8209;3.0</p>
+  <h2>Elevations</h2>
+  <div class="col"><p>A 4:12 gable with the ridge running north&ndash;south, so the roof sheds east and west and the two gable ends face the house and the rear fence. Top of ridge lands at 14&#8242;&#8209;6&#8243; above grade &mdash; 18 inches of headroom under the 16&#8242;&#8209;0&#8243; ceiling Santa Ana applies to detached ADUs. Smooth three-coat stucco reads as the neighbourhood default; the entry bay is fiber-cement board and batten so the front door has somewhere to be.</p></div>
+
+  <div class="sheet">
+    <div class="sheet-body">
+      <svg viewBox="-120 -50 790 322" role="img" aria-label="North elevation showing the gable end facing the main house, with the recessed covered entry at left, dining and kitchen windows, and the ridge at 14 feet 6 inches above grade">
+        <line class="dash" x1="-110" y1="8" x2="580" y2="8"/>
+        <text class="tagr" x="-110" y="0">16&#8242;&#8209;0&#8243; MAX. HEIGHT &#8212; DETACHED ADU</text>
+
+        <path class="fillsoft" d="M-24,100 L-24,92 L168,28 L348,88 L348,96 L168,36 Z"/>
+        <path class="lt" d="M-24,100 L-24,92 L168,28 L348,88 L348,96 L168,36 Z"/>
+        <path class="fillsoft" d="M0,200 L0,86 L168,30 L336,86 L336,200 Z"/>
+        <path class="lt" d="M0,200 L0,86 L168,30 L336,86 L336,200 Z"/>
+
+        <g class="hairline">
+          <line x1="0" y1="180" x2="336" y2="180"/><line x1="0" y1="160" x2="336" y2="160"/>
+          <line x1="0" y1="140" x2="336" y2="140"/><line x1="0" y1="120" x2="336" y2="120"/>
+          <line x1="0" y1="100" x2="336" y2="100"/>
+        </g>
+
+        <rect class="fillsoft" x="0" y="96" width="63" height="96"/>
+        <line class="lt" x1="63" y1="96" x2="63" y2="192"/>
+        <line class="md" x1="0" y1="96" x2="63" y2="96"/>
+        <g class="hairline">
+          <line x1="9" y1="83" x2="9" y2="96"/><line x1="18" y1="80" x2="18" y2="96"/>
+          <line x1="27" y1="77" x2="27" y2="96"/><line x1="36" y1="74" x2="36" y2="96"/>
+          <line x1="45" y1="71" x2="45" y2="96"/><line x1="54" y1="68" x2="54" y2="96"/>
+        </g>
+
+        <rect class="md" x="8" y="112" width="36" height="80"/>
+        <line class="glass" x1="14" y1="120" x2="38" y2="120"/>
+        <line class="glass" x1="14" y1="150" x2="38" y2="150"/>
+        <rect class="md" x="47" y="112" width="14" height="60"/>
+        <rect class="md" x="120" y="112" width="48" height="60"/>
+        <line class="glass" x1="144" y1="112" x2="144" y2="172"/>
+        <rect class="md" x="248" y="112" width="48" height="36"/>
+        <line class="glass" x1="272" y1="112" x2="272" y2="148"/>
+
+        <circle class="hairline" cx="72" cy="108" r="5"/>
+        <text class="tag" x="82" y="107">SCONCE + ILLUMINATED ADDRESS</text>
+
+        <line class="lt" x1="-70" y1="200" x2="400" y2="200" style="stroke-width:2.2"/>
+        <g class="hairline">
+          <line x1="-64" y1="200" x2="-72" y2="210"/><line x1="-40" y1="200" x2="-48" y2="210"/>
+          <line x1="-16" y1="200" x2="-24" y2="210"/><line x1="8" y1="200" x2="0" y2="210"/>
+          <line x1="352" y1="200" x2="344" y2="210"/><line x1="376" y1="200" x2="368" y2="210"/>
+          <line x1="400" y1="200" x2="392" y2="210"/>
+        </g>
+
+        <g class="dimline">
+          <line x1="590" y1="28" x2="590" y2="200"/>
+          <line x1="582" y1="28" x2="598" y2="28"/><line x1="582" y1="200" x2="598" y2="200"/>
+          <line x1="348" y1="86" x2="576" y2="86"/>
+          <line x1="336" y1="192" x2="576" y2="192"/>
+        </g>
+        <text class="dim" x="616" y="118" transform="rotate(-90 616 118)">14&#8242;&#8209;6&#8243;</text>
+        <text class="lvl" x="352" y="82">T.O. PLATE +9&#8242;&#8209;8&#8243;</text>
+        <text class="lvl" x="352" y="188">F.F. +0&#8242;&#8209;8&#8243;</text>
+        <text class="lvl" x="352" y="216">GRADE 0&#8242;&#8209;0&#8243;</text>
+        <text class="tag" x="206" y="74">4:12</text>
+        <path class="md" d="M206,78 L230,86 M206,78 L206,86 L230,86"/>
+
+        <text class="tag" x="-90" y="240">STUCCO, SMOOTH 3&#8209;COAT, INTEGRAL COLOR</text>
+        <text class="tag" x="-90" y="252">BOARD + BATTEN FIBER CEMENT AT ENTRY BAY</text>
+        <text class="tag" x="190" y="240">COMP. SHINGLE, CLASS A &#183; 12&#8243; RAKE / 24&#8243; W. EAVE / 12&#8243; E. EAVE</text>
+        <text class="tag" x="190" y="252">EAVE EDGE HOLDS 5&#8242;&#8209;0&#8243; MIN. FROM P.L. &#8212; NO SOFFIT PROTECTION REQ&#8217;D</text>
+      </svg>
+    </div>
+    <div class="titleblock">
+      <div><span class="tb-name">North Elevation</span> &nbsp;/&nbsp; Entry, facing main house</div>
+      <div>Scale &#188;&#8243; = 1&#8242;&#8209;0&#8243;</div>
+      <div>Ridge 14&#8242;&#8209;6&#8243; &lt; 16&#8242;&#8209;0&#8243;</div>
+      <div class="tb-no">A&#8209;3.1</div>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-body">
+      <svg viewBox="-120 -50 790 348" role="img" aria-label="West elevation showing the sliding door to the patio under a six foot trellis, two bedroom casement windows, and the foreshortened west roof slope">
+        <line class="dash" x1="-110" y1="8" x2="580" y2="8"/>
+        <text class="tagr" x="-110" y="0">16&#8242;&#8209;0&#8243; MAX. HEIGHT</text>
+
+        <rect class="fillsoft" x="-12" y="28" width="354" height="64"/>
+        <rect class="lt" x="-12" y="28" width="354" height="64"/>
+        <g class="hairline">
+          <line x1="-12" y1="44" x2="342" y2="44"/><line x1="-12" y1="60" x2="342" y2="60"/>
+          <line x1="-12" y1="76" x2="342" y2="76"/>
+        </g>
+        <rect class="fillsoft" x="-12" y="92" width="354" height="8"/>
+        <rect class="lt" x="-12" y="92" width="354" height="8"/>
+        <text class="tag" x="250" y="24">RIDGE BEYOND</text>
+
+        <path class="fillsoft" d="M48,96 L48,200 L330,200 L330,92 L48,92 Z"/>
+        <path class="lt" d="M0,92 L330,92 L330,200 L0,200 Z"/>
+        <rect class="fillsoft" x="0" y="96" width="48" height="96"/>
+        <line class="md" x1="0" y1="96" x2="48" y2="96"/>
+        <line class="lt" x1="48" y1="96" x2="48" y2="200"/>
+        <text class="tag" x="0" y="228">COVERED ENTRY BEYOND</text>
+
+        <g class="hairline">
+          <line x1="48" y1="180" x2="330" y2="180"/><line x1="48" y1="160" x2="330" y2="160"/>
+          <line x1="48" y1="140" x2="330" y2="140"/><line x1="48" y1="120" x2="330" y2="120"/>
+          <line x1="48" y1="104" x2="330" y2="104"/>
+        </g>
+
+        <rect class="md" x="78" y="112" width="72" height="80"/>
+        <line class="glass" x1="114" y1="112" x2="114" y2="192"/>
+        <rect class="md" x="186" y="112" width="36" height="48"/>
+        <path class="glass" d="M186,136 L222,112 M186,136 L222,160"/>
+        <rect class="md" x="250" y="112" width="36" height="48"/>
+        <path class="glass" d="M250,136 L286,112 M250,136 L286,160"/>
+        
+
+        <rect class="fillsoft" x="56" y="106" width="116" height="7"/>
+        <rect class="md" x="56" y="106" width="116" height="7"/>
+        <rect class="fillsoft" x="58" y="113" width="9" height="87"/>
+        <rect class="md" x="58" y="113" width="9" height="87"/>
+        <rect class="fillsoft" x="161" y="113" width="9" height="87"/>
+        <rect class="md" x="161" y="113" width="9" height="87"/>
+        <text class="tag" x="220" y="228">6&#8242;&#8209;0&#8243; TRELLIS OVER PATIO &#8212; WEST SHADING</text>
+
+        <line class="lt" x1="-70" y1="200" x2="400" y2="200" style="stroke-width:2.2"/>
+        <g class="hairline">
+          <line x1="-64" y1="200" x2="-72" y2="210"/><line x1="-40" y1="200" x2="-48" y2="210"/>
+          <line x1="-16" y1="200" x2="-24" y2="210"/>
+          <line x1="352" y1="200" x2="344" y2="210"/><line x1="376" y1="200" x2="368" y2="210"/>
+        </g>
+        <g class="dimline">
+          <line x1="590" y1="28" x2="590" y2="200"/>
+          <line x1="582" y1="28" x2="598" y2="28"/><line x1="582" y1="200" x2="598" y2="200"/>
+        </g>
+        <text class="dim" x="616" y="118" transform="rotate(-90 616 118)">14&#8242;&#8209;6&#8243;</text>
+        <text class="lvl" x="356" y="90">EAVE +9&#8242;&#8209;4&#8243;</text>
+        <text class="tagr" x="0" y="252">EGRESS CASEMENT &#183; 5.0 SF MIN. NET CLEAR, SILL 2&#8242;&#8209;8&#8243; &lt; 44&#8243; MAX.</text>
+        <text class="tag" x="0" y="276">FACES THE 16&#8242;&#8209;0&#8243; SIDE YARD &#8212; NO OPENING RESTRICTIONS</text>
+      </svg>
+    </div>
+    <div class="titleblock">
+      <div><span class="tb-name">West Elevation</span> &nbsp;/&nbsp; Patio side</div>
+      <div>Scale &#188;&#8243; = 1&#8242;&#8209;0&#8243;</div>
+      <div>16&#8242;&#8209;0&#8243; to property line</div>
+      <div class="tb-no">A&#8209;3.2</div>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-body">
+      <svg viewBox="-70 -30 900 352" role="img" aria-label="South and east elevations, the two faces nearest the property lines, both drawn with ordinary unrated construction">
+        <g transform="translate(0,0)">
+          <path class="fillsoft" d="M-24,100 L-24,92 L168,28 L348,88 L348,96 L168,36 Z"/>
+          <path class="lt" d="M-24,100 L-24,92 L168,28 L348,88 L348,96 L168,36 Z"/>
+          <path class="fillsoft" d="M0,200 L0,86 L168,30 L336,86 L336,200 Z"/>
+          <path class="lt" d="M0,200 L0,86 L168,30 L336,86 L336,200 Z"/>
+          <g class="hairline">
+            <line x1="0" y1="180" x2="336" y2="180"/><line x1="0" y1="150" x2="336" y2="150"/>
+            <line x1="0" y1="120" x2="336" y2="120"/>
+          </g>
+          <rect class="md" x="36" y="112" width="36" height="48"/>
+          <line class="glass" x1="54" y1="112" x2="54" y2="160"/>
+          <rect class="md" x="140" y="108" width="36" height="24"/>
+          <line class="glass" x1="140" y1="120" x2="176" y2="120"/>
+          <rect class="fillsoft" x="150" y="140" width="36" height="60"/>
+          <rect class="md" x="150" y="140" width="36" height="60"/>
+          <text class="tag" x="0" y="228">BEDROOM 2 EGRESS &#183; BATH OBSCURE TEMPERED</text>
+          <text class="tag" x="0" y="248">HEAT PUMP WATER HEATER ON PAD, 3&#8242;&#8209;6&#8243; CLEAR OF P.L.</text>
+          <line class="lt" x1="-50" y1="200" x2="380" y2="200" style="stroke-width:2.2"/>
+          <text class="rm" x="168" y="290">SOUTH ELEVATION</text>
+          <text class="rmsub" x="168" y="308">REAR &#183; 6&#8242;&#8209;0&#8243; TO PROPERTY LINE</text>
+        </g>
+        <g transform="translate(420,0)">
+          <rect class="fillsoft" x="0" y="92" width="330" height="108"/>
+          <rect class="lt" x="0" y="92" width="330" height="108"/>
+          <rect class="fillsoft" x="-12" y="28" width="354" height="64"/>
+          <rect class="lt" x="-12" y="28" width="354" height="64"/>
+          <g class="hairline"><line x1="-12" y1="48" x2="342" y2="48"/><line x1="-12" y1="70" x2="342" y2="70"/></g>
+          <rect class="fillsoft" x="-12" y="92" width="354" height="8"/>
+          <rect class="lt" x="-12" y="92" width="354" height="8"/>
+          <g class="hairline">
+            <line x1="0" y1="180" x2="330" y2="180"/><line x1="0" y1="150" x2="330" y2="150"/>
+            <line x1="0" y1="120" x2="330" y2="120"/>
+          </g>
+          <rect class="md" x="74" y="112" width="36" height="30"/>
+          <line class="glass" x1="92" y1="112" x2="92" y2="142"/>
+          <rect class="md" x="186" y="112" width="36" height="48"/>
+          <path class="glass" d="M186,136 L222,112 M186,136 L222,160"/>
+          <rect class="md" x="262" y="112" width="36" height="48"/>
+          <line class="glass" x1="280" y1="112" x2="280" y2="160"/>
+          <text class="tag" x="0" y="228">KITCHEN WINDOW OVER SINK &#183; BEDROOM 2 EGRESS CASEMENT</text>
+          <line class="lt" x1="-50" y1="200" x2="380" y2="200" style="stroke-width:2.2"/>
+          <text class="rm" x="165" y="290">EAST ELEVATION</text>
+          <text class="rmsub" x="165" y="308">SIDE &#183; 6&#8242;&#8209;0&#8243; TO PROPERTY LINE</text>
+        </g>
+      </svg>
+    </div>
+    <div class="titleblock">
+      <div><span class="tb-name">South + East Elevations</span> &nbsp;/&nbsp; Property-line faces</div>
+      <div>Scale &#8539;&#8243; = 1&#8242;&#8209;0&#8243;</div>
+      <div>Unrated &#183; unlimited openings</div>
+      <div class="tb-no">A&#8209;3.3</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Sheet A&#8209;4.0</p>
+  <h2>Building section</h2>
+  <div class="col"><p>Cut east&ndash;west through the great room. Flat 9&#8242;&#8209;0&#8243; ceilings over the bedrooms and bath; the great room follows the rafters to 12&#8242;&#8209;8&#8243; at the ridge, which is what keeps 749 square feet from feeling like 749 square feet. All-electric: heat-pump space conditioning, heat-pump water heater on an exterior pad, induction cooking, no gas service to the building.</p></div>
+
+  <div class="sheet">
+    <div class="sheet-body">
+      <svg viewBox="-350 -60 940 340" role="img" aria-label="East-west building section through the great room showing the vaulted ceiling rising to 12 feet 8 inches at the ridge, slab on grade, and insulation values">
+        <path class="fillsoft" d="M-24,100 L-24,92 L168,28 L348,88 L348,96 L168,36 Z"/>
+        <path class="poche" d="M-24,100 L-24,92 L168,28 L348,88 L348,96 L168,36 Z"/>
+        <path class="md" d="M7,84 L168,40 L329,84"/>
+        <rect class="poche" x="163" y="30" width="10" height="14"/>
+        <text class="tag" x="192" y="22">RIDGE BEAM</text>
+
+        <rect class="poche" x="0" y="84" width="7" height="122"/>
+        <rect class="poche" x="329" y="84" width="7" height="122"/>
+        <rect class="poche" x="-6" y="192" width="13" height="30"/>
+        <rect class="poche" x="329" y="192" width="13" height="30"/>
+        <rect class="poche" x="7" y="192" width="322" height="4"/>
+        <g class="hairline">
+          <line x1="7" y1="196" x2="329" y2="196"/>
+          <line x1="7" y1="200" x2="329" y2="200"/>
+        </g>
+        <line class="lt" x1="-60" y1="200" x2="480" y2="200" style="stroke-width:2.2"/>
+
+        <rect class="void" x="0" y="112" width="7" height="80"/>
+        <line class="glass" x1="3.5" y1="112" x2="3.5" y2="192"/>
+        <rect class="void" x="329" y="112" width="7" height="30"/>
+        <line class="glass" x1="332.5" y1="112" x2="332.5" y2="142"/>
+
+        <g class="hairline">
+          <rect x="22" y="160" width="84" height="32" rx="3"/>
+          <rect x="304" y="156" width="25" height="36"/>
+          <rect x="232" y="156" width="30" height="36"/>
+        </g>
+        <text class="tag" x="228" y="150">ISLAND</text>
+        <text class="tag" x="60" y="150">LIVING</text>
+
+        <g class="dimline">
+          <line x1="396" y1="40" x2="396" y2="192"/>
+          <line x1="388" y1="40" x2="404" y2="40"/><line x1="388" y1="192" x2="404" y2="192"/>
+          <line x1="356" y1="84" x2="356" y2="192"/>
+          <line x1="348" y1="84" x2="364" y2="84"/><line x1="348" y1="192" x2="364" y2="192"/>
+        </g>
+        <text class="dim" x="422" y="116" transform="rotate(-90 422 116)">12&#8242;&#8209;8&#8243; AT RIDGE</text>
+        <text class="dim" x="348" y="140" transform="rotate(-90 348 140)">9&#8242;&#8209;0&#8243;</text>
+
+        <text class="tag" x="-340" y="60">ROOF &#8212; R&#8209;38 BATT BETWEEN 2&#215;12 RAFTERS,</text>
+        <text class="tag" x="-340" y="72">VENTED AT EAVE + RIDGE, 1:150 N.F.V.A.</text>
+        <line class="dimline" x1="-140" y1="66" x2="40" y2="66"/>
+        <text class="tag" x="-340" y="130">WALL &#8212; 2&#215;6 @ 16&#8243; O.C.,</text>
+        <text class="tag" x="-340" y="142">R&#8209;21 + R&#8209;5 CONT. INSUL.</text>
+        <text class="tag" x="-340" y="154">SHEAR PANEL PER STRUCT.</text>
+        <line class="dimline" x1="-140" y1="136" x2="-4" y2="136"/>
+        <text class="tag" x="-340" y="228">SLAB &#8212; 4&#8243; CONC. ON 15&#8209;MIL VAPOR</text>
+        <text class="tag" x="-340" y="240">RETARDER ON 4&#8243; BASE; R&#8209;10 SLAB EDGE.</text>
+        <text class="tag" x="-340" y="252">FOOTING PER GEOTECH &#8212; SDC D.</text>
+        <text class="lvl" x="444" y="190">F.F. +0&#8242;&#8209;8&#8243;</text>
+        <text class="lvl" x="444" y="212">GRADE 0&#8242;&#8209;0&#8243;</text>
+      </svg>
+    </div>
+    <div class="titleblock">
+      <div><span class="tb-name">Section A&#8209;A</span> &nbsp;/&nbsp; East&ndash;west through great room</div>
+      <div>Scale &#188;&#8243; = 1&#8242;&#8209;0&#8243;</div>
+      <div>All-electric</div>
+      <div class="tb-no">A&#8209;4.0</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Compliance</p>
+  <h2>Zoning &mdash; SAMC 41&#8209;194 &amp; state ADU law</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Standard</th><th class="code">Reference</th><th>Required / allowed</th><th>Provided</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Use</td><td class="code">SAMC 41&#8209;194</td><td>One ADU permitted ministerially on a lot with an existing single-family dwelling</td><td>1 detached ADU</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Maximum floor area</td><td class="code">SAMC 41&#8209;194</td><td>1,200 SF detached; state floor of 1,000 SF for 2+ bedrooms</td><td class="prov">749 SF gross<br>663 SF interior</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Rear setback</td><td class="code">SAMC 41&#8209;194</td><td class="prov">4&#8242;&#8209;0&#8243; min.</td><td class="prov">6&#8242;&#8209;0&#8243;</td><td><span class="ok">Exceeds</span></td></tr>
+        <tr><td>Interior side setback</td><td class="code">SAMC 41&#8209;194</td><td class="prov">4&#8242;&#8209;0&#8243; min.</td><td class="prov">6&#8242;&#8209;0&#8243; E / 16&#8242;&#8209;0&#8243; W</td><td><span class="ok">Exceeds</span></td></tr>
+        <tr><td>Height</td><td class="code">SAMC 41&#8209;194</td><td class="prov">16&#8242;&#8209;0&#8243; detached (18&#8242;&#8209;0&#8243; within &frac12; mi. of a major transit stop)</td><td class="prov">14&#8242;&#8209;6&#8243; to ridge</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Lot coverage</td><td class="code">Gov. Code 66314</td><td class="prov">R1 max. 50%; an 800 SF ADU cannot be denied on coverage grounds</td><td class="prov">34.0%</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Separation</td><td class="code">SAMC 41&#8209;194</td><td class="prov">6&#8242;&#8209;0&#8243; typical between structures</td><td class="prov">15&#8242;&#8209;6&#8243; to garage<br>31&#8242;&#8209;6&#8243; to house</td><td><span class="ok">Exceeds</span></td></tr>
+        <tr><td>Parking</td><td class="code">Gov. Code 66314</td><td>1 space per unit; waived within &frac12; mile walking distance of transit, in a historic district, or where residential permit parking applies</td><td class="prov">1 uncovered 9&#8242;&#215;18&#8242;</td><td><span class="ok ck">Verify waiver</span></td></tr>
+        <tr><td>Owner occupancy</td><td class="code">AB 976</td><td>Cannot be imposed on an ADU (JADUs still require it)</td><td>Not applicable</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Separate sale</td><td class="code">Gov. Code 66341</td><td>ADU may not be sold separately from the primary dwelling</td><td>Rental only, 30-day minimum term</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Historic overlay</td><td class="code">SAMC 41&#8209;194</td><td>Added design, material and placement review inside a Santa Ana historic district</td><td>Assumed outside a district</td><td><span class="ok ck">Verify</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Building &mdash; 2025 California Residential Code</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Item</th><th class="code">Reference</th><th>Required</th><th>Provided</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Ceiling height</td><td class="code">R305.1</td><td class="prov">7&#8242;&#8209;0&#8243; min.</td><td class="prov">9&#8242;&#8209;0&#8243;; 12&#8242;&#8209;8&#8243; vaulted</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Habitable room size</td><td class="code">R304</td><td class="prov">70 SF min., no dimension under 7&#8242;&#8209;0&#8243;</td><td class="prov">Smallest bedroom 127 SF, 9&#8242;&#8209;5&#8243; min. dim.</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Natural light</td><td class="code">R303.1</td><td class="prov">8% of floor area</td><td class="prov">18&ndash;30% by room</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Emergency escape</td><td class="code">R310.1 / R310.2.1</td><td class="prov">5.0 SF net clear at grade floor, 24&#8243; clear ht., 20&#8243; clear wd., sill &le; 44&#8243;</td><td class="prov">3&#8242;&#215;4&#8242; casement &asymp; 9.8 SF net; sill 2&#8242;&#8209;8&#8243;</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Egress door</td><td class="code">R311.2 / R311.3</td><td class="prov">3&#8242;&#8209;0&#8243;&#215;6&#8242;&#8209;8&#8243;; landing 36&#8243; deep</td><td class="prov">3&#8242;&#8209;0&#8243; door; 4&#8242;&#8209;0&#8243; covered landing</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Hallway</td><td class="code">R311.6</td><td class="prov">3&#8242;&#8209;0&#8243; min.</td><td class="prov">3&#8242;&#8209;7&#189;&#8243;</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Fire separation distance</td><td class="code">Table R302.1(1)</td><td>1-hour walls, 25% opening cap and protected projections under 5&#8242;&#8209;0&#8243;</td><td class="prov">Walls at 6&#8242;&#8209;0&#8243;, eave and rake edges at 5&#8242;&#8209;0&#8243;</td><td><span class="ok">Not triggered</span></td></tr>
+        <tr><td>Smoke alarms</td><td class="code">R314</td><td>Each sleeping room, outside each sleeping area, each storey</td><td>4 interconnected, hardwired with battery backup</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>CO alarms</td><td class="code">R315</td><td>Where a fuel-burning appliance or attached garage exists</td><td>All-electric, detached &mdash; alarm provided regardless</td><td><span class="ok">Exceeds</span></td></tr>
+        <tr><td>Fire sprinklers</td><td class="code">R313 / Gov. Code 66314(f)</td><td>Not required in an ADU if not required in the primary dwelling</td><td>None; NFPA 13D standby capacity at the meter</td><td><span class="ok ck">Verify SAFD</span></td></tr>
+        <tr><td>Safety glazing</td><td class="code">R308.4.5</td><td>Glazing within 60&#8243; of a tub or shower drain</td><td>Tempered obscure at bath</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Bath exhaust</td><td class="code">R303.3 exc. / M1507</td><td class="prov">50 cfm intermittent or 20 cfm continuous</td><td class="prov">80 cfm humidity-sensing, ducted to exterior</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Whole-house ventilation</td><td class="code">M1505.4</td><td>ASHRAE 62.2 rate</td><td>Continuous exhaust with passive inlets, per CF1R</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Site drainage</td><td class="code">R401.3</td><td class="prov">6&#8243; fall in the first 10&#8242;</td><td class="prov">2% away on all sides</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Seismic</td><td class="code">R301.2.2 &#183; SDC D</td><td>Engineered or prescriptive lateral system</td><td>Engineered shear panels and holdowns; geotechnical report</td><td><span class="ok ck">By engineer</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Energy, green &amp; fees</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Item</th><th class="code">Reference</th><th>Requirement</th><th>Approach</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Envelope</td><td class="code">T24 Pt. 6, CZ8</td><td class="prov">Prescriptive R&#8209;38 roof, R&#8209;21+R&#8209;5 c.i. wall, U&#8209;0.30 / SHGC&#8209;0.23 glazing</td><td>As drawn; performance path CF1R</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Water heating</td><td class="code">150.1(c)8</td><td>Heat-pump water heater is the prescriptive baseline</td><td>120V HPWH on an exterior pad at the south wall</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Space conditioning</td><td class="code">150.1(c)</td><td>Heat pump baseline</td><td>Two-zone ductless mini-split, 1.5 ton</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Solar PV</td><td class="code">150.1(c)14</td><td>Required on a new detached ADU unless the calculated array falls under the small-system threshold</td><td class="prov">Calculated &asymp; 1.5 kW; 250 SF solar-ready zone on the west slope with conduit and panel space either way</td><td><span class="ok ck">Confirm on CF1R</span></td></tr>
+        <tr><td>Battery</td><td class="code">T24 Pt. 6</td><td>Storage-ready pre-wiring</td><td>Conduit and reserved breaker space</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Water fixtures</td><td class="code">CALGreen 4.303</td><td class="prov">1.28 gpf WC &#183; 1.8 gpm shower &#183; 1.2 gpm lavatory</td><td>As scheduled</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>Construction waste</td><td class="code">CALGreen 4.408</td><td class="prov">65% diversion</td><td>Waste management plan at permit</td><td><span class="ok ck">At permit</span></td></tr>
+        <tr><td>Finishes</td><td class="code">CALGreen 4.504</td><td>Low-VOC adhesives, sealants, paints, flooring</td><td>Specified</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td>EV charging</td><td class="code">CALGreen 4.106.4</td><td>EV-ready where parking is added</td><td class="prov">240V / 40A raceway to the parking pad</td><td><span class="ok">Complies</span></td></tr>
+        <tr><td><strong>Impact fees</strong></td><td class="code">Gov. Code 66311.5</td><td>No impact fee may be imposed on an ADU of 750 SF or less of interior livable space</td><td class="prov">749 SF gross &#183; 663 SF interior &mdash; under the threshold on either measure</td><td><span class="ok">Exempt</span></td></tr>
+        <tr><td>Connection fees</td><td class="code">Gov. Code 66314</td><td>Must be proportionate to the ADU&#8217;s burden, not a flat new-residence charge</td><td>Separate 4&#8243; sewer lateral and sub-metered water</td><td><span class="ok ck">Verify with city</span></td></tr>
+        <tr><td>Review</td><td class="code">Gov. Code 66317</td><td class="prov">60-day ministerial approval, no discretionary hearing</td><td>Building permit submittal</td><td><span class="ok">&#8212;</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="col">
+    <p class="eyebrow">Before submittal</p>
+    <h2>Redlines</h2>
+    <p>Eight things a Santa Ana plan checker will ask about that no drawing can settle on its own. I could not reach santa&#8209;ana.org or the Municode text from this session &mdash; the zoning figures above come from published summaries of SAMC 41&#8209;194 and from state law, so confirm the city numbers against the current adopted ordinance before you draw a permit set.</p>
+  </div>
+  <div class="redlines">
+    <ol>
+      <li><strong>Confirm SAMC 41&#8209;194 as adopted.</strong> Specifically the detached maximum floor area, the height ceiling, and whether the city measures ADU area as gross or interior livable space. The design is drawn to survive the stricter reading of each, but the numbers in the matrix should be verified line by line.</li>
+      <li><strong>Parking waiver.</strong> Measure the &frac12;-mile walking distance to the nearest transit stop. If it qualifies, the 9&#8242;&#215;18&#8242; pad becomes optional and can be returned to yard.</li>
+      <li><strong>Historic district.</strong> Santa Ana has several &mdash; French Park, Floral Park, Washington Square, Wilshire Square, Heninger Park, Lacy, Logan. Inside one, materials and placement pick up an added review and the stucco/board-and-batten palette may need to change.</li>
+      <li><strong>Fire access.</strong> The hose pull measures roughly 129&#8242; from the curb. Confirm how SAFD measures it on this parcel; if it lands over 150&#8242;, expect a request for residential sprinklers or a widened path.</li>
+      <li><strong>Sprinklers.</strong> State law protects the ADU only if the primary dwelling is also unsprinklered. Confirm the existing house has no system and that no sprinkler retrofit is being triggered.</li>
+      <li><strong>Solar.</strong> Have the energy consultant run the array size on the CF1R. If it comes back at or above the exemption threshold, the west slope carries the panels &mdash; the solar-ready zone is sized for it and the roof orientation already suits it.</li>
+      <li><strong>Geotechnical.</strong> Parts of Santa Ana sit in a state-mapped liquefaction zone. A soils report may be required, and it drives the foundation design; do not assume a conventional slab.</li>
+      <li><strong>Utilities.</strong> Confirm whether the city requires a separate sewer lateral and water service for a detached ADU on this parcel, and get the connection-fee calculation in writing &mdash; it must be proportionate to size.</li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="col">
+    <h3>Assumptions this set is drawn on</h3>
+    <p>A flat interior R1 lot, 50&#8242;&#215;135&#8242;, not in a historic district, flood zone or very-high fire hazard severity zone; an existing 1,148 SF single-family house at a 20&#8242; front setback with a detached 400 SF garage mid-lot; an existing unsprinklered primary dwelling; and utilities with capacity at the street. Change any of those and the site plan moves before the floor plan does. The building itself &mdash; 28&#8242;&#8209;0&#8243; &#215; 27&#8242;&#8209;6&#8243; with the entry notched out of one corner &mdash; is portable to any Santa Ana R1 rear yard that can give it 34&#8242; of depth and 34&#8242; of width.</p>
+  </div>
+</section>
+
+<footer>
+  SEVEN FORTY&#8209;NINE &#183; PROJECT 26&#8209;014 &#183; ISSUE 01 &#183; 01 SEP 2026<br>
+  Design development set. Not construction documents. Not stamped or signed by a licensed architect or engineer.<br>
+  Structural, geotechnical, Title&nbsp;24 energy and MEP design by others. Code references reflect the 2025 California Residential Code,<br>
+  2025 Title&nbsp;24 Parts 6 and 11, and Santa Ana Municipal Code Sec. 41&#8209;194 as summarized in publicly available sources &#8212;<br>
+  verify all against the currently adopted text with the City of Santa Ana Planning and Building Agency before permit submittal.
+</footer>
+
+</div>
