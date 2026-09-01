@@ -936,9 +936,15 @@ function driveToken(){return gTok&&Date.now()<gTokExp?gTok:null;}
 async function dFetch(url,opt){
   opt=opt||{};opt.headers=Object.assign({Authorization:'Bearer '+driveToken()},opt.headers||{});
   const r=await fetch(url,opt);
-  if(r.status===401){V.driveNeeds=true;render();throw new Error('auth');}
-  if(r.status===403){toast('Google didn\'t grant Drive access — reconnect and tick the Drive checkbox on Google\'s permission screen',true);
-    throw new Error('scope');}
+  if(!r.ok){
+    let detail='';try{const j=await r.json();detail=(j.error&&(j.error.message||j.error.status))||'';}catch(e){}
+    S.drive=S.drive||{};S.drive.lastErr='HTTP '+r.status+(detail?' — '+detail:'')
+      +' ('+url.replace('https://www.googleapis.com','').split('?')[0]+')';saveQuiet();
+    if(r.status===401){V.driveNeeds=true;render();throw new Error('auth');}
+    if(r.status===403)throw new Error('scope');
+    throw new Error('HTTP '+r.status);
+  }
+  if(S.drive)delete S.drive.lastErr;
   return r;
 }
 async function driveFind(){
@@ -967,9 +973,13 @@ async function drivePush(){
         {method:'POST',headers:{'Content-Type':'multipart/related; boundary='+bnd},body:mp});
       const d=await r.json();if(d.id){S.drive.fileId=d.id;}
     }
-    S.drive.lastSync=Date.now();S.drive.dirty=0;saveQuiet();
+    S.drive.lastSync=Date.now();S.drive.dirty=0;delete S.drive.lastErr;saveQuiet();
     if(V.screen==='more')render();
-  }catch(e){}finally{gBusy=false;}
+  }catch(e){
+    S.drive=S.drive||{};
+    if(!S.drive.lastErr)S.drive.lastErr=(e&&e.message)||'unknown';
+    saveQuiet();
+  }finally{gBusy=false;}
 }
 function driveSchedulePush(){
   if(!driveOn()||!driveToken())return;
@@ -997,8 +1007,10 @@ async function driveBootSync(){
       render();toast('Synced from Google Drive ☁️');
     }else{rlog('Backup is older than what\'s on this phone — keeping local data.');drivePush();}
   }catch(e){
-    rlog('✗ Drive error: '+((e&&e.message)||'unknown'));
-    if(e&&e.message==='scope')return;        // already told the user what to do
+    rlog('✗ Drive error: '+((S.drive&&S.drive.lastErr)||(e&&e.message)||'unknown'));
+    if(e&&e.message==='scope'){
+      toast('Google didn\'t grant Drive access — reconnect and tick the Drive checkbox on the permission screen',true);
+      return;}
     toast('Couldn\'t reach Google Drive — see the note under the button',true);
   }
 }
@@ -2436,6 +2448,7 @@ function more(){
     ${driveOn()?`<p class="sm">${driveFresh()?'☁️ <b class="grn">Backed up</b>':'⚠️ <b class="red">Not safely backed up</b>'} —
       last <b>successful</b> backup: <b>${S.drive.lastSync?new Date(S.drive.lastSync).toLocaleString():'never'}</b>.
       That timestamp is the only thing that means your data is safe — "connected" alone doesn't.</p>
+      ${S.drive.lastErr?`<p class="xs red" style="margin-top:6px">Last sync error: ${esc(S.drive.lastErr)}</p>`:''}
       <button class="btn ${driveFresh()?'':'primary'}" style="margin-top:10px" data-a="drive_sync">Sync now</button>
       <button class="btn ghost" style="margin-top:8px" data-a="drive_off">Disconnect</button>`
     :`<p class="sm mut">Link your own Google account and the app keeps a copy of your data in
@@ -2742,8 +2755,8 @@ const A={
   automatch:()=>{S.settings.autoMatch=S.settings.autoMatch===false?true:false;save();render();},
   drive_sync:async()=>{
     if(driveToken()){toast('Backing up…');await drivePush();
-      toast(S.drive.lastSync&&Date.now()-S.drive.lastSync<60e3?'Backed up ☁️':'Backup failed — try again',
-        !(S.drive.lastSync&&Date.now()-S.drive.lastSync<60e3));render();}
+      const ok=S.drive.lastSync&&Date.now()-S.drive.lastSync<60e3;
+      toast(ok?'Backed up ☁️':'Backup failed: '+(S.drive.lastErr||'unknown error'),!ok);render();}
     else A.drive_connect();},
   drive_connect:()=>{
     if(isStandalone()){rlog('Opening Google sign-in…');driveRedirectAuth();return;}
