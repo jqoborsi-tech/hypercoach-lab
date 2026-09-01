@@ -353,6 +353,12 @@ struct ReviewView: View {
                 Toggle("Reference planes STL", isOn: $options.includeReferencePlanes).tint(Palette.accent)
                 Toggle("Registration markers", isOn: $options.includeRegistrationMarkers).tint(Palette.accent)
                 Toggle("Reference photographs", isOn: $options.includeKeyframes).tint(Palette.accent)
+                Toggle("Full record set", isOn: $options.includeRecords).tint(Palette.accent)
+                Toggle("CBCT DICOM series", isOn: $options.includeCBCTSeries).tint(Palette.accent)
+                if options.includeCBCTSeries {
+                    Text("The DICOM headers carry the patient's name, identifier and date of birth. Only include the series when the recipient is entitled to them.")
+                        .font(.caption2).foregroundStyle(Palette.warn)
+                }
             }
             Card(title: "Orientation") {
                 Toggle("Align to the clinical reference frame", isOn: $options.alignToClinicalFrame)
@@ -448,7 +454,7 @@ struct ReviewView: View {
         let reference = referenceCapture
         let texture = self.texture
         let keyframes = store.keyframeURLs(caseID: caseID, captureID: capture.id)
-        let clinicalPhotos = store.clinicalPhotoURLs(caseID: caseID)
+        let recordsDirectory = store.recordsDirectory(caseID: caseID)
         let options = self.options
 
         Task.detached(priority: .userInitiated) {
@@ -458,7 +464,7 @@ struct ReviewView: View {
                                                      mesh: mesh,
                                                      textureJPEG: texture,
                                                      keyframes: keyframes,
-                                                     clinicalPhotos: clinicalPhotos,
+                                                     recordsDirectory: recordsDirectory,
                                                      referenceCapture: reference,
                                                      options: options)
                 await MainActor.run {

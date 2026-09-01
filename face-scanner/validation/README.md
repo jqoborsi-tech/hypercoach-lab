@@ -12,6 +12,8 @@ python3 test_fusion_pipeline.py      # synthetic depth camera -> TSDF -> mesh (n
 python3 test_clinical_frame.py       # landmark -> reference frame (needs numpy)
 python3 test_smile_design.py         # smile-design measurements, signs and magnitudes
 python3 test_superimposition.py      # rigid alignment between captures
+python3 test_icp_registration.py     # CBCT-to-intraoral registration, good and degenerate
+python3 test_tooth_geometry.py       # the smile-design tooth series, drawn to a PNG
 ```
 
 What they assert, and the results at the time of writing:
@@ -56,6 +58,32 @@ determinant exactly +1 (a reflection here would mirror one capture against anoth
 With 0.8 mm of simulated landmark-picking noise it degrades to a 1.27 mm RMS residual
 and 0.7° of rotation error, which is the honest floor for how well two captures can be
 superimposed by hand-placed points.
+
+**`test_icp_registration.py`** — a synthetic dental arch with tooth-scale relief,
+displaced by a known transform, with sensor noise, 15 % of the surface missing and a
+scatter blob standing in for a restoration artefact. Two scenarios:
+
+```
+A. good picks, 85% overlap   -> 0.143 deg / 0.180 mm residual, RMS 0.052 mm, 78% inliers -> TRUSTED
+B. clustered picks, 25% overlap -> no iterate meets the 40% inlier floor          -> REJECTED
+```
+
+This test caught the worst defect in the project. The first implementation reported a
+**0.37 mm RMS on an alignment that was 25 mm wrong** — ICP had slid the arch along its
+own smooth surface, and every residual it could see was tiny. A low RMS on a small
+patch of surface proves nothing. The registration now has to satisfy three independent
+conditions before it is offered as usable: close fit, at least 40 % of the surface
+matched, and refinement that stayed near the operator's own point picks. It also keeps
+the best iterate rather than the last, because ICP can slide downhill into a worse pose
+while its residuals keep shrinking.
+
+**`test_tooth_geometry.py`** — draws the tooth series and outlines to a PNG so the
+arrangement can be looked at rather than reasoned about. It found two things reasoning
+had missed: the tooth outlines crossed themselves on one side of the mouth (the
+traversal order was driven by mesial/distal, which flips between sides), and continuing
+the golden proportion past the canine produced 1.2 mm premolars. Both are fixed; the
+proximal profile is now widest at the contact point rather than the middle, which is
+what closes the interproximal wedges.
 
 **`test_clinical_frame.py`** — synthetic landmarks placed in a known anatomical pose,
 rotated into an arbitrary scanner frame, then run through the frame construction. The

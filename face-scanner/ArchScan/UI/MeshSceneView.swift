@@ -12,6 +12,11 @@ struct MeshSceneView: UIViewRepresentable {
     var registrationPoints: [RegistrationPoint] = []
     var activeLandmark: LandmarkID?
     var showTexture: Bool
+    /// A second surface drawn over the first — used to show a CBCT surface sitting on
+    /// the intraoral scan after registration.
+    var overlayMesh: ScanMesh?
+    var overlayTransform: simd_float4x4 = matrix_identity_float4x4
+    var overlayOpacity: Double = 0.55
     var onPick: (SIMD3<Float>) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
@@ -37,6 +42,7 @@ struct MeshSceneView: UIViewRepresentable {
         context.coordinator.onPick = onPick
         context.coordinator.updateMesh(mesh, textureJPEG: textureJPEG, showTexture: showTexture)
         context.coordinator.updateLandmarks(landmarks, registrationPoints: registrationPoints, active: activeLandmark)
+        context.coordinator.updateOverlay(overlayMesh, transform: overlayTransform, opacity: overlayOpacity)
     }
 
     final class Coordinator: NSObject {
@@ -44,6 +50,8 @@ struct MeshSceneView: UIViewRepresentable {
         weak var sceneView: SCNView?
         private var meshNode: SCNNode?
         private var landmarkRoot = SCNNode()
+        private var overlayNode: SCNNode?
+        private var lastOverlayCount = -1
         private var lastVertexCount = -1
         private var lastTextureCount = -1
         private var lastShowTexture: Bool?
@@ -132,6 +140,33 @@ struct MeshSceneView: UIViewRepresentable {
                 marker(radius: 0.0042, color: UIColor(Palette.warn),
                        at: SCNVector3(point.x, point.y, point.z))
             }
+        }
+
+        func updateOverlay(_ mesh: ScanMesh?, transform: simd_float4x4, opacity: Double) {
+            guard let scene = sceneView?.scene else { return }
+            guard let mesh, !mesh.isEmpty else {
+                overlayNode?.removeFromParentNode()
+                overlayNode = nil
+                lastOverlayCount = -1
+                return
+            }
+            if mesh.vertexCount != lastOverlayCount {
+                lastOverlayCount = mesh.vertexCount
+                overlayNode?.removeFromParentNode()
+                let geometry = MeshSceneView.geometry(for: mesh, textureJPEG: nil)
+                let material = SCNMaterial()
+                material.lightingModel = .physicallyBased
+                material.diffuse.contents = UIColor(Palette.accent)
+                material.roughness.contents = 0.6
+                material.isDoubleSided = true
+                geometry.materials = [material]
+                let node = SCNNode(geometry: geometry)
+                overlayNode = node
+                scene.rootNode.addChildNode(node)
+            }
+            overlayNode?.opacity = opacity
+            overlayNode?.simdTransform = transform
+            overlayNode?.pivot = meshNode?.pivot ?? SCNMatrix4Identity
         }
 
         @objc func handleTap(_ recognizer: UITapGestureRecognizer) {

@@ -8,6 +8,9 @@ struct ExportOptions {
     var includeReferencePlanes = true
     var includeKeyframes = true
     var includeRegistrationMarkers = true
+    var includeRecords = true
+    /// Off by default: DICOM headers carry the patient's name, ID and date of birth.
+    var includeCBCTSeries = false
     var alignToClinicalFrame = true
     /// Export in the reference capture's frame so the case's scans land superimposed.
     var superimposeOntoReference = true
@@ -31,7 +34,7 @@ enum CaseExporter {
                        mesh rawMesh: ScanMesh,
                        textureJPEG: Data?,
                        keyframes: [URL],
-                       clinicalPhotos: [URL],
+                       recordsDirectory: URL?,
                        referenceCapture: ScanCapture?,
                        options: ExportOptions) throws -> Output {
 
@@ -192,14 +195,27 @@ enum CaseExporter {
             }
             fileNames.append("photos/ (\(keyframes.count) reference images)")
         }
-        if options.includeKeyframes, !clinicalPhotos.isEmpty {
-            let clinicalFolder = folder.appendingPathComponent("photos/clinical", isDirectory: true)
-            try FileManager.default.createDirectory(at: clinicalFolder, withIntermediateDirectories: true)
-            for url in clinicalPhotos {
-                try? FileManager.default.copyItem(at: url,
-                                                  to: clinicalFolder.appendingPathComponent(url.lastPathComponent))
+        // --- The rest of the record set --------------------------------------------
+        if options.includeRecords, !patientCase.records.isEmpty {
+            let recordsFolder = folder.appendingPathComponent("records", isDirectory: true)
+            try FileManager.default.createDirectory(at: recordsFolder, withIntermediateDirectories: true)
+            var copied = 0
+            for entry in patientCase.records where !entry.fileName.isEmpty {
+                // The CBCT is deliberately excluded unless asked for: the DICOM headers
+                // carry the patient's name and identifiers, and an export usually leaves
+                // the practice.
+                if entry.kind == .cbct && !options.includeCBCTSeries { continue }
+                guard let source = recordsDirectory?.appendingPathComponent(entry.fileName),
+                      FileManager.default.fileExists(atPath: source.path) else { continue }
+                try? FileManager.default.copyItem(at: source,
+                                                  to: recordsFolder.appendingPathComponent(entry.fileName))
+                copied += 1
             }
-            fileNames.append("photos/clinical/ (\(clinicalPhotos.count) clinical photographs)")
+            let manifest = recordsManifest(patientCase, includedCBCT: options.includeCBCTSeries)
+            try manifest.data(using: .utf8)?
+                .write(to: folder.appendingPathComponent("records-manifest.txt"), options: .atomic)
+            fileNames.append("records/ (\(copied) files)")
+            fileNames.append("records-manifest.txt")
         }
 
         let zipURL = try zip(folder)
@@ -464,6 +480,54 @@ enum CaseExporter {
 
         Research and laboratory use. Not a medical device.
         """
+    }
+
+    // MARK: - Records manifest
+
+    private static func recordsManifest(_ patientCase: PatientCase, includedCBCT: Bool) -> String {
+        var lines: [String] = []
+        lines.append("\(generator) — record set for case \(patientCase.displayCode)")
+        lines.append(String(repeating: "=", count: 58))
+        let progress = patientCase.recordsProgress
+        lines.append(progress.summary)
+        lines.append("\(progress.present) of \(progress.total) records on file.")
+        lines.append("")
+
+        for group in RecordKind.Group.allCases {
+            let kinds = RecordKind.inGroup(group)
+            guard kinds.contains(where: { patientCase.hasRecord($0) || $0.isEssential }) else { continue }
+            lines.append(group.title)
+            lines.append(String(repeating: "-", count: group.title.count))
+            for kind in kinds {
+                let entries = patientCase.records(of: kind)
+                let present = patientCase.hasRecord(kind)
+                let mark = present ? "[x]" : (kind.isEssential ? "[ ] MISSING — essential" : "[ ]")
+                var line = "\(mark) \(kind.title)"
+                if kind == .facialScan, !patientCase.captures.isEmpty {
+                    line += " — \(patientCase.captures.count) capture(s)"
+                }
+                lines.append(line)
+                for entry in entries {
+                    if !entry.fileName.isEmpty { lines.append("      file: records/\(entry.fileName)") }
+                    if !entry.note.isEmpty { lines.append("      note: \(entry.note)") }
+                    for (key, value) in entry.metadata.sorted(by: { $0.key < $1.key }) {
+                        lines.append("      \(key.replacingOccurrences(of: "_", with: " ")): \(value)")
+                    }
+                }
+            }
+            lines.append("")
+        }
+
+        if patientCase.hasRecord(.cbct), !includedCBCT {
+            lines.append("CBCT")
+            lines.append("----")
+            lines.append("The DICOM series is NOT in this export. Its headers carry the patient's")
+            lines.append("name, identifier and date of birth, so it stays on the device unless it is")
+            lines.append("explicitly included. Any registration matrix recorded for it is listed above.")
+            lines.append("")
+        }
+        lines.append("Research and laboratory use. Not a medical device.")
+        return lines.joined(separator: "\n") + "\n"
     }
 
     // MARK: - Lab handoff

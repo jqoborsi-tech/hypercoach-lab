@@ -45,6 +45,8 @@ enum CaptureKind: String, Codable, CaseIterable, Identifiable {
 
 /// Quality figures kept with each capture so a scan can be judged later.
 struct CaptureQuality: Codable, Equatable {
+    init() {}
+
     var integratedFrames: Int = 0
     var rejectedFrames: Int = 0
     var yawCoverageDegrees: Float = 0
@@ -80,6 +82,30 @@ struct ScanCapture: Codable, Identifiable, Equatable {
     var quality: CaptureQuality = CaptureQuality()
     /// Export in the landmark-derived clinical frame rather than raw scanner coordinates.
     var alignToClinicalFrame: Bool = true
+
+    enum CodingKeys: String, CodingKey {
+        case id, kind, createdAt, note, landmarks, registrationPoints, registrationTarget
+        case superimposeOntoCaptureID, calibration, quality, alignToClinicalFrame
+    }
+
+    init() {}
+
+    // Hand-written so a case written by an older build still opens after the schema
+    // grows. Every field but the identity falls back to a default.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        kind = try container.decodeIfPresent(CaptureKind.self, forKey: .kind) ?? .rest
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        note = try container.decodeIfPresent(String.self, forKey: .note) ?? ""
+        landmarks = try container.decodeIfPresent([Landmark].self, forKey: .landmarks) ?? []
+        registrationPoints = try container.decodeIfPresent([RegistrationPoint].self, forKey: .registrationPoints) ?? []
+        registrationTarget = try container.decodeIfPresent(RegistrationTarget.self, forKey: .registrationTarget) ?? .scanFlag
+        superimposeOntoCaptureID = try container.decodeIfPresent(UUID.self, forKey: .superimposeOntoCaptureID)
+        calibration = try container.decodeIfPresent(CalibrationReference.self, forKey: .calibration) ?? .none
+        quality = try container.decodeIfPresent(CaptureQuality.self, forKey: .quality) ?? CaptureQuality()
+        alignToClinicalFrame = try container.decodeIfPresent(Bool.self, forKey: .alignToClinicalFrame) ?? true
+    }
 
     var meshFileName: String { "\(id.uuidString).mesh" }
     var textureFileName: String { "\(id.uuidString).jpg" }
@@ -136,6 +162,56 @@ struct PatientCase: Codable, Identifiable, Equatable {
     var note: String = ""
     var createdAt: Date = Date()
     var captures: [ScanCapture] = []
+    /// Photographs, video, imported scans, the CBCT, and the written notes.
+    var records: [RecordEntry] = []
+    /// Smile designs built over a photograph.
+    var smileDesigns: [SmileDesignRecord] = []
 
     var displayCode: String { code.isEmpty ? "Untitled case" : code }
+
+    enum CodingKeys: String, CodingKey {
+        case id, code, note, createdAt, captures, records, smileDesigns
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        code = try container.decodeIfPresent(String.self, forKey: .code) ?? ""
+        note = try container.decodeIfPresent(String.self, forKey: .note) ?? ""
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        captures = try container.decodeIfPresent([ScanCapture].self, forKey: .captures) ?? []
+        records = try container.decodeIfPresent([RecordEntry].self, forKey: .records) ?? []
+        smileDesigns = try container.decodeIfPresent([SmileDesignRecord].self, forKey: .smileDesigns) ?? []
+    }
+
+    // MARK: - Records
+
+    func records(of kind: RecordKind) -> [RecordEntry] {
+        records.filter { $0.kind == kind }
+    }
+
+    func hasRecord(_ kind: RecordKind) -> Bool {
+        if kind == .facialScan { return !captures.isEmpty }
+        return records.contains { $0.kind == kind }
+    }
+
+    var recordsProgress: RecordsProgress {
+        var progress = RecordsProgress()
+        for kind in RecordKind.allCases {
+            let present = hasRecord(kind)
+            progress.total += 1
+            if present { progress.present += 1 }
+            if kind.isEssential {
+                progress.essentialTotal += 1
+                if present { progress.essentialPresent += 1 }
+            }
+        }
+        return progress
+    }
+
+    var missingEssentials: [RecordKind] {
+        RecordKind.allCases.filter { $0.isEssential && !hasRecord($0) }
+    }
 }

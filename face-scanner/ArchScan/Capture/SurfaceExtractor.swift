@@ -9,6 +9,21 @@ import simd
 /// the same surface, but it cannot produce the ambiguous-face holes the cube table
 /// is famous for — and for a clinical scan a watertight surface matters more than a
 /// tidy triangle budget.
+/// Anything the extractor can march over: the TSDF built from a face sweep, or a CBCT
+/// volume thresholded at an enamel or bone value. Generic rather than protocol-typed at
+/// the call site so the per-voxel accessors specialise instead of dispatching
+/// dynamically fifteen million times.
+protocol ScalarField {
+    var nx: Int { get }
+    var ny: Int { get }
+    var nz: Int { get }
+    /// Negative inside the surface, positive outside.
+    func fieldValue(_ i: Int, _ j: Int, _ k: Int) -> Float
+    func fieldIsObserved(_ i: Int, _ j: Int, _ k: Int) -> Bool
+    func fieldColor(_ i: Int, _ j: Int, _ k: Int) -> (SIMD3<Float>, Bool)
+    func fieldPosition(_ i: Int, _ j: Int, _ k: Int) -> SIMD3<Float>
+}
+
 enum SurfaceExtractor {
 
     /// Six tetrahedra sharing the cube's 0–7 diagonal.
@@ -23,14 +38,13 @@ enum SurfaceExtractor {
         (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1)
     ]
 
-    static func extract(from volume: TSDFVolume,
-                        progress: ((Double) -> Void)? = nil) -> ScanMesh {
+    static func extract<Field: ScalarField>(from field: Field,
+                                            progress: ((Double) -> Void)? = nil) -> ScanMesh {
         var mesh = ScanMesh()
         var vertexForEdge: [UInt64: UInt32] = [:]
         vertexForEdge.reserveCapacity(400_000)
 
-        let minWeight = volume.meshingMinimumWeight
-        let nx = volume.nx, ny = volume.ny, nz = volume.nz
+        let nx = field.nx, ny = field.ny, nz = field.nz
 
         var values = [Float](repeating: 0, count: 8)
         var positions = [SIMD3<Float>](repeating: .zero, count: 8)
@@ -42,21 +56,22 @@ enum SurfaceExtractor {
             if k % 8 == 0 { progress?(Double(k) / Double(max(nz - 1, 1))) }
             for j in 0..<(ny - 1) {
                 for i in 0..<(nx - 1) {
-                    // Cheap rejection: most of the volume is never observed.
-                    if volume.rawWeight(i, j, k) < minWeight { continue }
+                    // Cheap rejection: most of a volume is never observed.
+                    if !field.fieldIsObserved(i, j, k) { continue }
 
                     var usable = true
                     var negative = 0
                     for c in 0..<8 {
                         let o = cornerOffsets[c]
                         let ci = i + o.0, cj = j + o.1, ck = k + o.2
-                        if volume.rawWeight(ci, cj, ck) < minWeight { usable = false; break }
-                        let v = volume.rawSDF(ci, cj, ck)
+                        if !field.fieldIsObserved(ci, cj, ck) { usable = false; break }
+                        let v = field.fieldValue(ci, cj, ck)
                         values[c] = v
                         if v < 0 { negative += 1 }
-                        positions[c] = volume.voxelCenter(ci, cj, ck)
-                        colors[c] = volume.rawColor(ci, cj, ck)
-                        colorValid[c] = volume.rawHasColor(ci, cj, ck)
+                        positions[c] = field.fieldPosition(ci, cj, ck)
+                        let sampled = field.fieldColor(ci, cj, ck)
+                        colors[c] = sampled.0
+                        colorValid[c] = sampled.1
                         cellIndices[c] = UInt32((ck * ny + cj) * nx + ci)
                     }
                     guard usable, negative > 0, negative < 8 else { continue }

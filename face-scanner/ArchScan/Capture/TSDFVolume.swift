@@ -321,6 +321,15 @@ final class TSDFVolume {
     }
 }
 
+extension TSDFVolume: ScalarField {
+    func fieldValue(_ i: Int, _ j: Int, _ k: Int) -> Float { rawSDF(i, j, k) }
+    func fieldIsObserved(_ i: Int, _ j: Int, _ k: Int) -> Bool { rawWeight(i, j, k) >= meshingMinimumWeight }
+    func fieldColor(_ i: Int, _ j: Int, _ k: Int) -> (SIMD3<Float>, Bool) {
+        (rawColor(i, j, k), rawHasColor(i, j, k))
+    }
+    func fieldPosition(_ i: Int, _ j: Int, _ k: Int) -> SIMD3<Float> { voxelCenter(i, j, k) }
+}
+
 /// Dense 6x6 solve (Gaussian elimination with partial pivoting).
 enum LinearSolver {
     static func solve6(_ a: [Double], _ b: [Double]) -> [Double]? {
