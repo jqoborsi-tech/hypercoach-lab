@@ -13,7 +13,7 @@ enum TextureAtlas {
         var size: Int
     }
 
-    static func bake(_ mesh: ScanMesh, size: Int = 2048, quality: CGFloat = 0.92) -> Result? {
+    static func bake(_ mesh: ScanMesh, size: Int = 4096, quality: CGFloat = 0.95) -> Result? {
         guard !mesh.isEmpty, mesh.uvs.count == mesh.positions.count,
               mesh.colors.count == mesh.positions.count else { return nil }
 
@@ -80,7 +80,7 @@ enum TextureAtlas {
             }
         }
 
-        dilate(&pixels, covered: &covered, width: width, height: height, passes: 3)
+        bleed(&pixels, covered: &covered, width: width, height: height, passes: 6)
 
         guard let image = makeImage(pixels: pixels, width: width, height: height),
               let jpeg = image.jpegData(compressionQuality: quality) else { return nil }
@@ -88,35 +88,46 @@ enum TextureAtlas {
     }
 
     /// Bleeds covered pixels outwards so bilinear filtering in the CAD viewer does not
-    /// pull background colour across the triangle edges.
-    private static func dilate(_ pixels: inout [UInt8], covered: inout [Bool],
-                               width: Int, height: Int, passes: Int) {
-        for _ in 0..<passes {
-            var added: [(Int, SIMD3<Int>)] = []
-            for y in 0..<height {
-                for x in 0..<width where !covered[y * width + x] {
-                    var sum = SIMD3<Int>.zero
-                    var count = 0
-                    for dy in -1...1 {
-                        for dx in -1...1 {
-                            let nx = x + dx, ny = y + dy
-                            guard nx >= 0, ny >= 0, nx < width, ny < height, covered[ny * width + nx] else { continue }
-                            let o = (ny * width + nx) * 3
-                            sum += SIMD3<Int>(Int(pixels[o]), Int(pixels[o + 1]), Int(pixels[o + 2]))
-                            count += 1
-                        }
-                    }
-                    if count > 0 { added.append((y * width + x, sum / count)) }
+    /// pull background colour across a triangle edge. Works on the coverage frontier
+    /// rather than rescanning the whole atlas each pass, which matters at 4096².
+    private static func bleed(_ pixels: inout [UInt8], covered: inout [Bool],
+                              width: Int, height: Int, passes: Int) {
+        var frontier: [Int] = []
+        frontier.reserveCapacity(1 << 16)
+        for y in 0..<height {
+            for x in 0..<width where covered[y * width + x] {
+                let index = y * width + x
+                if x == 0 || y == 0 || x == width - 1 || y == height - 1
+                    || !covered[index - 1] || !covered[index + 1]
+                    || !covered[index - width] || !covered[index + width] {
+                    frontier.append(index)
                 }
             }
-            if added.isEmpty { break }
-            for (index, colour) in added {
-                let o = index * 3
-                pixels[o] = UInt8(colour.x)
-                pixels[o + 1] = UInt8(colour.y)
-                pixels[o + 2] = UInt8(colour.z)
-                covered[index] = true
+        }
+
+        for _ in 0..<passes {
+            var next: [Int] = []
+            next.reserveCapacity(frontier.count)
+            for index in frontier {
+                let x = index % width, y = index / width
+                let source = index * 3
+                for dy in -1...1 {
+                    for dx in -1...1 {
+                        let nx = x + dx, ny = y + dy
+                        guard nx >= 0, ny >= 0, nx < width, ny < height else { continue }
+                        let neighbour = ny * width + nx
+                        if covered[neighbour] { continue }
+                        let destination = neighbour * 3
+                        pixels[destination] = pixels[source]
+                        pixels[destination + 1] = pixels[source + 1]
+                        pixels[destination + 2] = pixels[source + 2]
+                        covered[neighbour] = true
+                        next.append(neighbour)
+                    }
+                }
             }
+            if next.isEmpty { break }
+            frontier = next
         }
     }
 

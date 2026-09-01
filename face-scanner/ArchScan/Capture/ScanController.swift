@@ -84,7 +84,7 @@ final class FusionEngine: @unchecked Sendable {
             onUpdate?(state)
             return
         }
-        guard let depthFrame = DepthFrame.make(from: frame, faceAnchor: anchor, wantsColor: true) else { return }
+        guard let depthFrame = DepthFrame.make(from: frame, faceAnchor: anchor) else { return }
 
         let ambient = frame.lightEstimate?.ambientIntensity ?? 1000
         let distance = depthFrame.faceDistance
@@ -119,7 +119,11 @@ final class FusionEngine: @unchecked Sendable {
             return
         }
 
-        let result = volume.integrate(depthFrame, refinePose: true, hasData: state.integratedFrames > 4)
+        // Fusion runs inside the pixel-buffer lock so colour can be read at full
+        // sensor resolution without copying the frame.
+        let result = ColorSampler.with(frame: frame) { color in
+            volume.integrate(depthFrame, color: color, refinePose: true, hasData: state.integratedFrames > 4)
+        }
         if result.accepted {
             state.integratedFrames += 1
             distanceSamples.append(distance)

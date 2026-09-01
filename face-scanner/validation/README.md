@@ -10,6 +10,8 @@ device.
 python3 test_surface_extractor.py    # marching tetrahedra vs. an analytic sphere
 python3 test_fusion_pipeline.py      # synthetic depth camera -> TSDF -> mesh (needs numpy)
 python3 test_clinical_frame.py       # landmark -> reference frame (needs numpy)
+python3 test_smile_design.py         # smile-design measurements, signs and magnitudes
+python3 test_superimposition.py      # rigid alignment between captures
 ```
 
 What they assert, and the results at the time of writing:
@@ -35,6 +37,25 @@ non-manifold edges   : 0 (1924 boundary edges, as expected for a partial sweep)
 A sign error anywhere in the deprojection, the camera-to-face transform, or the
 truncated-distance normalisation would show up here as a wrong radius or an inverted
 surface. It does not.
+
+**`test_smile_design.py`** — a synthetic case built with known deviations (3° incisal
+cant with the patient's left side up, 2 mm dental midline shift to the left, 4 mm
+incisal display, 2 mm gingival display, a 20.8 % buccal corridor), rotated 43° into an
+arbitrary scanner frame, then measured from the landmarks alone. Every figure comes
+back exact, with the sign a clinician would read.
+
+This test earned its place: it caught a real defect. Vertical measurements were being
+projected onto the glabella–gnathion axis, which leans with the profile, so part of any
+anterior-posterior offset leaked into figures like incisal display — 3.56 mm reported
+for a true 4.00 mm. The vertical reference is now the Frankfort normal, which is the
+horizontal a cant is actually judged against, and the same case now reads 4.000 mm.
+
+**`test_superimposition.py`** — recovers a known rigid transform from corresponding
+landmarks via Horn's quaternion method: rotation to 4e-11, translation to 2 nanometres,
+determinant exactly +1 (a reflection here would mirror one capture against another).
+With 0.8 mm of simulated landmark-picking noise it degrades to a 1.27 mm RMS residual
+and 0.7° of rotation error, which is the honest floor for how well two captures can be
+superimposed by hand-placed points.
 
 **`test_clinical_frame.py`** — synthetic landmarks placed in a known anatomical pose,
 rotated into an arbitrary scanner frame, then run through the frame construction. The

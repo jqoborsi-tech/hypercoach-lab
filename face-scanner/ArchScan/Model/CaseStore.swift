@@ -140,6 +140,44 @@ final class CaseStore: ObservableObject {
         try? Data(contentsOf: textureURL(caseID: caseID, capture: capture))
     }
 
+    // MARK: - Clinical photographs
+    //
+    // Shot with the phone's own camera app at full 48 MP and attached here, rather than
+    // re-implementing a camera. They ride along in the export so the lab gets the photo
+    // series and the scan in one package.
+
+    func clinicalPhotoDirectory(caseID: UUID) -> URL {
+        directory(for: caseID).appendingPathComponent("clinical-photos", isDirectory: true)
+    }
+
+    func clinicalPhotoURLs(caseID: UUID) -> [URL] {
+        let items = (try? FileManager.default.contentsOfDirectory(at: clinicalPhotoDirectory(caseID: caseID),
+                                                                  includingPropertiesForKeys: nil)) ?? []
+        return items.filter { ["jpg", "jpeg", "png", "heic"].contains($0.pathExtension.lowercased()) }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
+    @discardableResult
+    func addClinicalPhoto(_ data: Data, to caseID: UUID, suggestedName: String? = nil) -> URL? {
+        let directory = clinicalPhotoDirectory(caseID: caseID)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss-SSS"
+        let name = suggestedName ?? "photo-\(formatter.string(from: Date())).jpg"
+        let url = directory.appendingPathComponent(name)
+        do {
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            return url
+        } catch {
+            lastError = "Could not save the photo: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    func deleteClinicalPhoto(at url: URL) {
+        try? FileManager.default.removeItem(at: url)
+    }
+
     func keyframeURLs(caseID: UUID, captureID: UUID) -> [URL] {
         let dir = keyframeDirectory(caseID: caseID, captureID: captureID)
         let items = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? []

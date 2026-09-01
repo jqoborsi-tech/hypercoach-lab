@@ -134,7 +134,10 @@ final class TSDFVolume {
     private let maxDepth: Float = 0.60
 
     @discardableResult
-    func integrate(_ frame: DepthFrame, refinePose: Bool, hasData: Bool) -> IntegrationResult {
+    func integrate(_ frame: DepthFrame,
+                   color: ColorSampler?,
+                   refinePose: Bool,
+                   hasData: Bool) -> IntegrationResult {
         var cameraToFace = frame.cameraToFace
         var correction: Float = 0
 
@@ -151,7 +154,6 @@ final class TSDFVolume {
         var samples = 0
 
         let width = frame.width, height = frame.height
-        let colorImage = frame.rgb
 
         frame.depth.withUnsafeBufferPointer { depthBuf in
             guard let depth = depthBuf.baseAddress else { return }
@@ -186,11 +188,18 @@ final class TSDFVolume {
                     let w = max(0.05, facing * rangeWeight)
                     let wRaw = w * weightScale
 
+                    // Colour is weighted far more sharply than geometry. A texel seen
+                    // face-on is in focus and correctly lit; the same texel at 60 degrees
+                    // is smeared across more skin and often in shadow. Cubing the
+                    // incidence term keeps the frontal views dominant, which is what
+                    // stops the incisal edges and the gingival margin going soft.
                     var sampledColor: SIMD3<Float>?
-                    if let colorImage {
-                        let u = colorImage.fx * (p0.x / -p0.z) + colorImage.cx
-                        let v = colorImage.fy * (-p0.y / -p0.z) + colorImage.cy
-                        sampledColor = colorImage.sample(u: u, v: v)
+                    var colorWeight: Float = 0
+                    if let color {
+                        let u = color.fx * (p0.x / -p0.z) + color.cx
+                        let v = color.fy * (-p0.y / -p0.z) + color.cy
+                        sampledColor = color.sample(u: u, v: v)
+                        colorWeight = facing * facing * facing * rangeWeight
                     }
 
                     var lastIndex = -1
@@ -213,13 +222,13 @@ final class TSDFVolume {
                         sdf[idx] = (sdf[idx] * oldRaw + value * wRaw) / max(newRaw, 1e-6)
                         weight[idx] = UInt16(newRaw)
 
-                        if let sampledColor, abs(along) < voxelSize {
+                        if let sampledColor, colorWeight > 0.001, abs(along) < voxelSize {
                             let o = idx * 3
                             let cw = Float(rgbWeight[idx])
-                            let denominator = cw + w
-                            let r = (Float(rgb[o]) * cw + sampledColor.x * 255 * w) / denominator
-                            let g = (Float(rgb[o + 1]) * cw + sampledColor.y * 255 * w) / denominator
-                            let b = (Float(rgb[o + 2]) * cw + sampledColor.z * 255 * w) / denominator
+                            let denominator = cw + colorWeight
+                            let r = (Float(rgb[o]) * cw + sampledColor.x * 255 * colorWeight) / denominator
+                            let g = (Float(rgb[o + 1]) * cw + sampledColor.y * 255 * colorWeight) / denominator
+                            let b = (Float(rgb[o + 2]) * cw + sampledColor.z * 255 * colorWeight) / denominator
                             rgb[o]     = UInt8(max(0, min(255, r)))
                             rgb[o + 1] = UInt8(max(0, min(255, g)))
                             rgb[o + 2] = UInt8(max(0, min(255, b)))

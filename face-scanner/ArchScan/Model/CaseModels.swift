@@ -70,6 +70,12 @@ struct ScanCapture: Codable, Identifiable, Equatable {
     var createdAt: Date = Date()
     var note: String = ""
     var landmarks: [Landmark] = []
+    /// Points the lab superimposes onto the intraoral scan.
+    var registrationPoints: [RegistrationPoint] = []
+    var registrationTarget: RegistrationTarget = .scanFlag
+    /// When set, this capture is exported in the reference capture's coordinate frame,
+    /// so a rest scan and a smile scan of the same patient land superimposed.
+    var superimposeOntoCaptureID: UUID?
     var calibration: CalibrationReference = .none
     var quality: CaptureQuality = CaptureQuality()
     /// Export in the landmark-derived clinical frame rather than raw scanner coordinates.
@@ -99,6 +105,23 @@ struct ScanCapture: Codable, Identifiable, Equatable {
 
     mutating func removeLandmark(_ id: LandmarkID) {
         landmarks.removeAll { $0.id == id }
+    }
+
+    var placedSmileCount: Int {
+        let placed = Set(landmarks.map { $0.id })
+        return LandmarkID.smileSet.filter { placed.contains($0) }.count
+    }
+
+    mutating func addRegistrationPoint(at position: SIMD3<Float>, label: String? = nil) {
+        let index = (registrationPoints.map { $0.index }.max() ?? 0) + 1
+        registrationPoints.append(RegistrationPoint(index: index,
+                                                    label: label ?? "Point \(index)",
+                                                    position: position))
+    }
+
+    mutating func removeRegistrationPoint(id: UUID) {
+        registrationPoints.removeAll { $0.id == id }
+        for (offset, _) in registrationPoints.enumerated() { registrationPoints[offset].index = offset + 1 }
     }
 
     func analysis() -> ClinicalAnalysis {

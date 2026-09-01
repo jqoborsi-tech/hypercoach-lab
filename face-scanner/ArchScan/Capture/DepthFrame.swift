@@ -3,20 +3,72 @@ import ARKit
 import CoreVideo
 import simd
 
-/// A quarter-resolution RGB copy of the captured frame, kept so colour can be
-/// sampled off the ARKit queue without holding on to pixel buffers from the pool.
-struct RGBImage {
-    var width: Int
-    var height: Int
-    var pixels: [UInt8]          // 3 bytes per pixel, sRGB
-    var fx: Float, fy: Float, cx: Float, cy: Float
+/// Reads colour straight out of ARKit's captured image at **full sensor resolution**
+/// (1920x1440 on the iPhone 15 Pro Max front camera), without copying or downsampling.
+///
+/// For smile design the texture is the deliverable as much as the geometry is — shade,
+/// incisal translucency, the gingival margin — so colour is sampled at native
+/// resolution rather than from a reduced copy. The pointers are only valid for the
+/// duration of `ColorSampler.with(frame:)`, which is why fusion runs inside that scope.
+struct ColorSampler {
+    let luma: UnsafePointer<UInt8>
+    let chroma: UnsafePointer<UInt8>
+    let lumaStride: Int
+    let chromaStride: Int
+    let width: Int
+    let height: Int
+    let fx: Float, fy: Float, cx: Float, cy: Float
+    /// Video-range buffers need the 16–235 expansion; full-range ones do not.
+    let videoRange: Bool
 
     @inline(__always)
     func sample(u: Float, v: Float) -> SIMD3<Float>? {
         let x = Int(u), y = Int(v)
         guard x >= 0, y >= 0, x < width, y < height else { return nil }
-        let i = (y * width + x) * 3
-        return SIMD3<Float>(Float(pixels[i]) / 255, Float(pixels[i + 1]) / 255, Float(pixels[i + 2]) / 255)
+        var yy = Float(luma[y * lumaStride + x])
+        let chromaIndex = (y >> 1) * chromaStride + (x >> 1) * 2
+        var cb = Float(chroma[chromaIndex]) - 128
+        var cr = Float(chroma[chromaIndex + 1]) - 128
+        if videoRange {
+            yy = (yy - 16) * (255.0 / 219.0)
+            cb *= 255.0 / 224.0
+            cr *= 255.0 / 224.0
+        }
+        let r = yy + 1.402 * cr
+        let g = yy - 0.344136 * cb - 0.714136 * cr
+        let b = yy + 1.772 * cb
+        return SIMD3<Float>(min(max(r, 0), 255) / 255,
+                            min(max(g, 0), 255) / 255,
+                            min(max(b, 0), 255) / 255)
+    }
+
+    /// Locks the frame's pixel buffer, builds a sampler over it, and unlocks on exit.
+    static func with<T>(frame: ARFrame, _ body: (ColorSampler?) -> T) -> T {
+        let buffer = frame.capturedImage
+        guard CVPixelBufferGetPlaneCount(buffer) >= 2 else { return body(nil) }
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+        guard let lumaBase = CVPixelBufferGetBaseAddressOfPlane(buffer, 0),
+              let chromaBase = CVPixelBufferGetBaseAddressOfPlane(buffer, 1) else { return body(nil) }
+
+        let width = CVPixelBufferGetWidthOfPlane(buffer, 0)
+        let height = CVPixelBufferGetHeightOfPlane(buffer, 0)
+        let format = CVPixelBufferGetPixelFormatType(buffer)
+        let m = frame.camera.intrinsics
+        let reference = frame.camera.imageResolution
+        let sx = Float(width) / Float(reference.width)
+        let sy = Float(height) / Float(reference.height)
+
+        let sampler = ColorSampler(
+            luma: lumaBase.assumingMemoryBound(to: UInt8.self),
+            chroma: chromaBase.assumingMemoryBound(to: UInt8.self),
+            lumaStride: CVPixelBufferGetBytesPerRowOfPlane(buffer, 0),
+            chromaStride: CVPixelBufferGetBytesPerRowOfPlane(buffer, 1),
+            width: width, height: height,
+            fx: m.columns.0.x * sx, fy: m.columns.1.y * sy,
+            cx: m.columns.2.x * sx, cy: m.columns.2.y * sy,
+            videoRange: format == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange)
+        return body(sampler)
     }
 }
 
@@ -28,7 +80,6 @@ struct DepthFrame {
     var fx: Float, fy: Float, cx: Float, cy: Float
     /// ARKit camera space -> face-anchor space.
     var cameraToFace: simd_float4x4
-    var rgb: RGBImage?
     var timestamp: TimeInterval
     /// Head pose relative to the camera, used for coverage bookkeeping.
     var faceYawDegrees: Float
@@ -44,7 +95,7 @@ struct DepthFrame {
         return SIMD3<Float>(xc, -yc, -d)
     }
 
-    static func make(from frame: ARFrame, faceAnchor: ARFaceAnchor, wantsColor: Bool) -> DepthFrame? {
+    static func make(from frame: ARFrame, faceAnchor: ARFaceAnchor) -> DepthFrame? {
         guard let raw = frame.capturedDepthData else { return nil }
         let converted = raw.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32)
         let map = converted.depthDataMap
@@ -100,64 +151,11 @@ struct DepthFrame {
         let t = faceToCamera.columns.3
         let distance = simd_length(SIMD3<Float>(t.x, t.y, t.z))
 
-        let rgb = wantsColor ? makeRGB(from: frame) : nil
-
         return DepthFrame(width: width, height: height, depth: depth,
                           fx: fx, fy: fy, cx: cx, cy: cy,
-                          cameraToFace: cameraToFace, rgb: rgb,
+                          cameraToFace: cameraToFace,
                           timestamp: frame.capturedDepthDataTimestamp,
                           faceYawDegrees: yaw, facePitchDegrees: pitch, faceDistance: distance)
     }
 
-    /// Quarter-resolution YCbCr -> RGB conversion of the captured image.
-    private static func makeRGB(from frame: ARFrame) -> RGBImage? {
-        let buffer = frame.capturedImage
-        guard CVPixelBufferGetPlaneCount(buffer) >= 2 else { return nil }
-        CVPixelBufferLockBaseAddress(buffer, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
-
-        let fullWidth = CVPixelBufferGetWidth(buffer)
-        let fullHeight = CVPixelBufferGetHeight(buffer)
-        guard let yBase = CVPixelBufferGetBaseAddressOfPlane(buffer, 0),
-              let cBase = CVPixelBufferGetBaseAddressOfPlane(buffer, 1) else { return nil }
-        let yStride = CVPixelBufferGetBytesPerRowOfPlane(buffer, 0)
-        let cStride = CVPixelBufferGetBytesPerRowOfPlane(buffer, 1)
-        let yPtr = yBase.assumingMemoryBound(to: UInt8.self)
-        let cPtr = cBase.assumingMemoryBound(to: UInt8.self)
-
-        let step = 4
-        let width = fullWidth / step
-        let height = fullHeight / step
-        guard width > 0, height > 0 else { return nil }
-
-        var pixels = [UInt8](repeating: 0, count: width * height * 3)
-        pixels.withUnsafeMutableBufferPointer { dst in
-            for j in 0..<height {
-                let sy = j * step
-                let cy = sy / 2
-                for i in 0..<width {
-                    let sx = i * step
-                    let luma = Float(yPtr[sy * yStride + sx])
-                    let cIndex = cy * cStride + (sx / 2) * 2
-                    let cb = Float(cPtr[cIndex]) - 128
-                    let cr = Float(cPtr[cIndex + 1]) - 128
-                    let r = luma + 1.402 * cr
-                    let g = luma - 0.344136 * cb - 0.714136 * cr
-                    let b = luma + 1.772 * cb
-                    let o = (j * width + i) * 3
-                    dst[o]     = UInt8(max(0, min(255, r)))
-                    dst[o + 1] = UInt8(max(0, min(255, g)))
-                    dst[o + 2] = UInt8(max(0, min(255, b)))
-                }
-            }
-        }
-
-        let m = frame.camera.intrinsics
-        let reference = frame.camera.imageResolution
-        let sx = Float(width) / Float(reference.width)
-        let sy = Float(height) / Float(reference.height)
-        return RGBImage(width: width, height: height, pixels: pixels,
-                        fx: m.columns.0.x * sx, fy: m.columns.1.y * sy,
-                        cx: m.columns.2.x * sx, cy: m.columns.2.y * sy)
-    }
 }

@@ -135,4 +135,7 @@ print(f"vertices={len(P)}  triangles={tris}")
 print(f"reconstructed radius: mean={radii.mean()*1000:.3f} mm  sd={radii.std()*1000:.3f} mm  (truth {TRUE_R*1000:.1f} mm)")
 print(f"diameter error: {(radii.mean()-TRUE_R)*2000:+.3f} mm")
 print(f"signed volume sign (must be positive = outward winding): {vol:+.3e}")
-print(f"non-manifold edges (should be 0): {sum(1 for e,n in edge.items() if n!=2)}")
+from collections import Counter
+histogram=Counter(edge.values())
+print(f"boundary edges (1 triangle — expected, the sweep only sees part of the sphere): {histogram.get(1,0)}")
+print(f"non-manifold edges (>2 triangles — would be a bug): {sum(v for k,v in histogram.items() if k>2)}")

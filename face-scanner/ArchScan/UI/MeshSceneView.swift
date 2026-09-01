@@ -9,6 +9,7 @@ struct MeshSceneView: UIViewRepresentable {
     var mesh: ScanMesh
     var textureJPEG: Data?
     var landmarks: [Landmark]
+    var registrationPoints: [RegistrationPoint] = []
     var activeLandmark: LandmarkID?
     var showTexture: Bool
     var onPick: (SIMD3<Float>) -> Void
@@ -35,7 +36,7 @@ struct MeshSceneView: UIViewRepresentable {
     func updateUIView(_ view: SCNView, context: Context) {
         context.coordinator.onPick = onPick
         context.coordinator.updateMesh(mesh, textureJPEG: textureJPEG, showTexture: showTexture)
-        context.coordinator.updateLandmarks(landmarks, active: activeLandmark)
+        context.coordinator.updateLandmarks(landmarks, registrationPoints: registrationPoints, active: activeLandmark)
     }
 
     final class Coordinator: NSObject {
@@ -103,19 +104,33 @@ struct MeshSceneView: UIViewRepresentable {
             scene.rootNode.addChildNode(node)
         }
 
-        func updateLandmarks(_ landmarks: [Landmark], active: LandmarkID?) {
+        func updateLandmarks(_ landmarks: [Landmark],
+                             registrationPoints: [RegistrationPoint],
+                             active: LandmarkID?) {
             landmarkRoot.childNodes.forEach { $0.removeFromParentNode() }
-            for landmark in landmarks {
-                let sphere = SCNSphere(radius: 0.0035)
+
+            func marker(radius: CGFloat, color: UIColor, at position: SCNVector3) {
+                let sphere = SCNSphere(radius: radius)
                 sphere.segmentCount = 12
                 let material = SCNMaterial()
                 material.lightingModel = .constant
-                material.diffuse.contents = landmark.id == active
-                    ? UIColor(Palette.accent) : UIColor(Palette.good)
+                material.diffuse.contents = color
                 sphere.materials = [material]
                 let node = SCNNode(geometry: sphere)
-                node.position = SCNVector3(landmark.x, landmark.y, landmark.z)
+                node.position = position
                 landmarkRoot.addChildNode(node)
+            }
+
+            for landmark in landmarks {
+                marker(radius: 0.0032,
+                       color: landmark.id == active ? UIColor(Palette.accent) : UIColor(Palette.good),
+                       at: SCNVector3(landmark.x, landmark.y, landmark.z))
+            }
+            // Registration markers are drawn larger and in a different colour, because
+            // mistaking one for a landmark would send the lab's alignment off.
+            for point in registrationPoints {
+                marker(radius: 0.0042, color: UIColor(Palette.warn),
+                       at: SCNVector3(point.x, point.y, point.z))
             }
         }
 

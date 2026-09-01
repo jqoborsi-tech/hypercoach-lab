@@ -218,6 +218,78 @@ enum MeshIO {
         try writeSTL(mesh, to: url, title: "ArchScan reference planes (mm)")
     }
 
+    // MARK: - Registration markers
+
+    /// A small sphere, as a once-subdivided octahedron. Used as the physical marker for
+    /// each registration point so the lab can see and snap to it in CAD.
+    static func markerMesh(at centre: SIMD3<Float>, radius: Float) -> ScanMesh {
+        let base: [SIMD3<Float>] = [
+            SIMD3(1, 0, 0), SIMD3(-1, 0, 0), SIMD3(0, 1, 0),
+            SIMD3(0, -1, 0), SIMD3(0, 0, 1), SIMD3(0, 0, -1)
+        ]
+        let faces: [(Int, Int, Int)] = [
+            (0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4),
+            (2, 0, 5), (1, 2, 5), (3, 1, 5), (0, 3, 5)
+        ]
+        var mesh = ScanMesh()
+        for face in faces {
+            let a = base[face.0], b = base[face.1], c = base[face.2]
+            let ab = simd_normalize(a + b), bc = simd_normalize(b + c), ca = simd_normalize(c + a)
+            for triangle in [(a, ab, ca), (ab, b, bc), (ca, bc, c), (ab, bc, ca)] {
+                let start = UInt32(mesh.positions.count)
+                for vertex in [triangle.0, triangle.1, triangle.2] {
+                    mesh.positions.append(centre + vertex * radius)
+                    mesh.normals.append(vertex)
+                }
+                mesh.indices.append(contentsOf: [start, start + 1, start + 2])
+            }
+        }
+        return mesh
+    }
+
+    /// Markers as an OBJ with one named group per point, so each point keeps its
+    /// identity when the lab opens the file.
+    static func writeMarkersOBJ(_ points: [(name: String, label: String, position: SIMD3<Float>)],
+                                to url: URL,
+                                radius: Float,
+                                header: [String]) throws {
+        let writer = try ChunkWriter(url: url)
+        defer { writer.close() }
+        for line in header { writer.write("# \(line)\n") }
+        writer.write("# Units: millimetres. One named group per registration point.\n")
+
+        let scale = metresToMillimetres
+        var offset: UInt32 = 0
+        for point in points {
+            let marker = markerMesh(at: point.position, radius: radius)
+            writer.write("g \(point.name)\n")
+            writer.write("# \(point.label)\n")
+            for p in marker.positions {
+                writer.write("v \(fmt(p.x * scale)) \(fmt(p.y * scale)) \(fmt(p.z * scale))\n")
+            }
+            var i = 0
+            while i + 2 < marker.indices.count {
+                let a = marker.indices[i] + 1 + offset
+                let b = marker.indices[i + 1] + 1 + offset
+                let c = marker.indices[i + 2] + 1 + offset
+                writer.write("f \(a) \(b) \(c)\n")
+                i += 3
+            }
+            offset += UInt32(marker.positions.count)
+        }
+    }
+
+    static func writeMarkersSTL(_ positions: [SIMD3<Float>], to url: URL, radius: Float, title: String) throws {
+        var combined = ScanMesh()
+        for position in positions {
+            let marker = markerMesh(at: position, radius: radius)
+            let offset = UInt32(combined.positions.count)
+            combined.positions.append(contentsOf: marker.positions)
+            combined.indices.append(contentsOf: marker.indices.map { $0 + offset })
+        }
+        try writeSTL(combined, to: url, title: title)
+    }
+
     // MARK: - Helpers
 
     @inline(__always)

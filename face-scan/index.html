@@ -91,7 +91,7 @@
     <div id="formats">
       <b>Mesh</b> — .obj, .ply (ascii or binary), .stl (ascii or binary)<br>
       <b>Texture</b> — drop the .jpg alongside the .obj<br>
-      <b>Landmarks</b> — landmarks.json from the export<br>
+      <b>Landmarks</b> — landmarks.json from the export (adds measurements and the registration markers)<br>
       <b>Units</b> — files are read as millimetres, the way ArchScan writes them
     </div>
   </div>
@@ -443,7 +443,8 @@ if (gl) {
 
 const scene = {
   mesh: null, buffers: null, texture: null, hasTexture: false,
-  landmarks: [], landmarkBuffer: null, report: null,
+  landmarks: [], landmarkBuffer: null,
+  registration: [], registrationBuffer: null, report: null,
   centre: [0,0,0], radius: 120
 };
 const view = { theta: 0, phi: 0, distance: 320, showTexture: true, showLandmarks: true };
@@ -533,13 +534,23 @@ function render() {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, scene.buffers.index);
   gl.drawElements(gl.TRIANGLES, scene.buffers.count, scene.buffers.type, 0);
 
-  if (view.showLandmarks && scene.landmarkBuffer) {
+  if (view.showLandmarks) {
     gl.uniform1f(loc.uFlat, 1);
-    gl.uniform3f(loc.uFlatColor, 0.42, 0.83, 0.55);
     gl.uniform1f(loc.uUseTex, 0);
     gl.disable(gl.DEPTH_TEST);
-    bind(scene.landmarkBuffer, loc.aPos, 3);
-    gl.drawArrays(gl.POINTS, 0, scene.landmarks.length);
+    if (scene.landmarkBuffer) {
+      gl.uniform3f(loc.uFlatColor, 0.42, 0.83, 0.55);
+      bind(scene.landmarkBuffer, loc.aPos, 3);
+      gl.drawArrays(gl.POINTS, 0, scene.landmarks.length);
+    }
+    if (scene.registrationBuffer) {
+      // Registration markers are drawn larger and amber — mistaking one for a
+      // landmark would send the lab's alignment off.
+      gl.uniform1f(loc.uPointSize, 11 * Math.min(window.devicePixelRatio || 1, 2));
+      gl.uniform3f(loc.uFlatColor, 0.85, 0.58, 0.17);
+      bind(scene.registrationBuffer, loc.aPos, 3);
+      gl.drawArrays(gl.POINTS, 0, scene.registration.length);
+    }
     gl.enable(gl.DEPTH_TEST);
   }
   requestAnimationFrame(render);
@@ -664,14 +675,19 @@ function loadTexture(file) {
 function loadReport(json) {
   scene.report = json;
   scene.landmarks = (json.landmarks || []).map(l => ({ ...l }));
-  if (scene.landmarks.length && gl) {
-    const data = new Float32Array(scene.landmarks.length * 3);
-    scene.landmarks.forEach((l, i) => { data[i*3] = l.x; data[i*3+1] = l.y; data[i*3+2] = l.z; });
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-    scene.landmarkBuffer = buffer;
-  }
+  scene.registration = ((json.registration && json.registration.points) || []).map(p => ({ ...p }));
+  scene.landmarkBuffer = pointBuffer(scene.landmarks);
+  scene.registrationBuffer = pointBuffer(scene.registration);
+}
+
+function pointBuffer(points) {
+  if (!points.length || !gl) return null;
+  const data = new Float32Array(points.length * 3);
+  points.forEach((p, i) => { data[i*3] = p.x; data[i*3+1] = p.y; data[i*3+2] = p.z; });
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+  return buffer;
 }
 
 /* ------------------------------------------------------------------ *
@@ -687,7 +703,8 @@ document.getElementById("btnFit").onclick = () => frameScene();
 
 function syncButtons() {
   document.getElementById("btnTex").classList.toggle("on", view.showTexture && scene.hasTexture);
-  document.getElementById("btnLm").classList.toggle("on", view.showLandmarks && scene.landmarks.length > 0);
+  document.getElementById("btnLm").classList.toggle("on",
+    view.showLandmarks && (scene.landmarks.length > 0 || scene.registration.length > 0));
 }
 
 function updateSheet() {
@@ -721,6 +738,20 @@ function updateSheet() {
     if (report.measurements && report.measurements.length) {
       parts.push(`<div class="sec"><h2>Measurements</h2>` +
         report.measurements.map(m => kv(m.label, formatValue(m))).join("") + `</div>`);
+    }
+    if (scene.registration.length) {
+      const r = report.registration || {};
+      parts.push(`<div class="sec"><h2>Registration for the merge</h2>` +
+        kv("Aligns to", r.target_label || "—") +
+        kv("Markers", scene.registration.length + (scene.registration.length < 3 ? " — needs at least 3" : "")) +
+        (r.superimposed_onto_reference ? kv("Superimposed", "yes") : "") +
+        (typeof r.superimposition_rms_mm === "number"
+          ? kv("Superimposition RMS", r.superimposition_rms_mm.toFixed(2) + " mm") : "") +
+        `<div id="lmList">` +
+        scene.registration.map(p => `<div><span>${escapeHTML(p.marker)} — ${escapeHTML(p.label || "")}</span><span>${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}</span></div>`).join("") +
+        `</div><div class="note ${scene.registration.length >= 3 ? "grn" : "amb"}">${scene.registration.length >= 3
+          ? "Amber markers in the view. Pick the same points on the intraoral scan for a three-point alignment."
+          : "Fewer than three markers — the lab cannot align this to the intraoral scan."}</div></div>`);
     }
     if (scene.landmarks.length) {
       parts.push(`<div class="sec"><h2>Landmarks (${scene.landmarks.length})</h2><div id="lmList">` +
