@@ -350,12 +350,13 @@ const EXS=[
   ['ab_wheel','Ab Wheel Rollout','abs',8,15,0],
 ].map(e=>({id:e[0],name:e[1],m:e[2],lo:e[3],hi:e[4],big:!!e[5]}));
 const EX={}; EXS.forEach(e=>EX[e.id]=e);
-/* Options for a swap menu: curated only, plus the current pick if it's an
-   extended (x-flagged) exercise that came from a template. */
+/* Options for a swap menu: curated + the user's ⭐ favorites (favorites first),
+   plus the current pick if it's an extended exercise from a template. */
+function isFav(id){return (S&&S.favs||[]).includes(id);}
 function exOptions(m,currentId){
-  const list=EXS.filter(e=>e.m===m&&!e.x);
-  if(currentId&&EX[currentId]&&EX[currentId].x&&EX[currentId].m===m)list.push(EX[currentId]);
-  return list;
+  const list=EXS.filter(e=>e.m===m&&(!e.x||isFav(e.id)));
+  if(currentId&&EX[currentId]&&EX[currentId].x&&EX[currentId].m===m&&list.indexOf(EX[currentId])<0)list.push(EX[currentId]);
+  return list.sort((a,b)=>(isFav(a.id)?0:1)-(isFav(b.id)?0:1));
 }
 
 /* ---------- Extended exercise library (reference only — kept OUT of the
@@ -878,7 +879,7 @@ const RPT=[
 
 /* ---------- State ---------- */
 let S=null;
-function defaults(){return {v:1,settings:{units:'lb',restBig:150,restSmall:90},profile:null,meso:null,archive:[],bw:[],lastPerf:{},draft:null};}
+function defaults(){return {v:1,settings:{units:'lb',restBig:150,restSmall:90},profile:null,meso:null,archive:[],bw:[],lastPerf:{},draft:null,favs:[]};}
 function load(){try{const x=JSON.parse(localStorage.getItem(LS));return x&&x.v?x:null;}catch(e){return null;}}
 function save(){S.updatedAt=Date.now();localStorage.setItem(LS,JSON.stringify(S));driveSchedulePush();}
 function saveQuiet(){localStorage.setItem(LS,JSON.stringify(S));} // no sync loop
@@ -1038,7 +1039,7 @@ function toast(msg,isErr){const t=$('#toast');t.textContent=msg;
 function setInputError(exId,w,r){
   const kg=S.profile&&S.profile.units==='kg';
   if(!(r>0))return 'Enter reps before checking the set';
-  if(r>50)return 'Too many reps entered — double-check that number';
+  if(r>99)return 'Too many reps entered — double-check that number';
   if(w>(kg?700:1500))return 'Weight too high — double-check that number';
   return null;
 }
@@ -1057,8 +1058,37 @@ function distribute(total,k){
   const base=Math.floor(total/k),rem=total-base*k;
   return Array.from({length:k},(_,i)=>Math.max(1,base+(i<rem?1:0)));
 }
+/* ⭐ Favorites bias: each training day, the FIRST slot of a muscle becomes one
+   of the user's favorite lifts for that muscle (rotating across days so the
+   week stays varied). Program structure — which muscles, how often — is
+   untouched; only the exercise filling the slot changes. */
+function applyFavorites(days){
+  const favs=(S&&S.favs||[]).filter(id=>EX[id]&&MUSCLES[EX[id].m]);
+  if(!favs.length)return;
+  const byM={},nUsed={};favs.forEach(id=>(byM[EX[id].m]=byM[EX[id].m]||[]).push(id));
+  days.forEach(dy=>{
+    const used=new Set(dy.slots.map(s=>s.ex));
+    Object.keys(byM).forEach(m=>{
+      const si=dy.slots.findIndex(s=>s.m===m);
+      if(si<0)return;
+      const k=nUsed[m]||0;nUsed[m]=k+1;         // rotate per occurrence, not per day
+      const pick=byM[m][k%byM[m].length];
+      if(!used.has(pick)){used.delete(dy.slots[si].ex);dy.slots[si].ex=pick;used.add(pick);}
+    });
+  });
+}
+/* Session order per the hypertrophy evidence: big compound lifts first (they
+   need — and reward — the freshest effort; performance drop hits them
+   hardest), isolation work after, abs & calves last (they interfere least
+   and recover fastest). Stable within each tier so preset order survives. */
+function hypertrophyOrder(slots){
+  const rank=s=>{if(s.m==='abs'||s.m==='calves')return 2;return (EX[s.ex]||{}).big?0:1;};
+  return slots.map((s,i)=>({s,i})).sort((a,b)=>rank(a.s)-rank(b.s)||a.i-b.i).map(x=>x.s);
+}
 function createMeso(cfg){
   const days=cfg.days.map(d=>({name:d.name,slots:d.slots.map(s=>({m:s[0],ex:s[1]}))}));
+  applyFavorites(days);
+  days.forEach(d=>d.slots=hypertrophyOrder(d.slots));
   // gather weekly slot positions per muscle
   const pos={};
   days.forEach((d,di)=>d.slots.forEach((s,si)=>{(pos[s.m]=pos[s.m]||[]).push([di,si]);}));
@@ -1175,7 +1205,9 @@ function beginWorkout(){
   M.days[d].slots.forEach((s,i)=>{
     S.draft.ex[i]=s.ex;
     const sg=suggest(s.ex,w);
-    S.draft.sets[i]=Array.from({length:tg[i]},()=>({w:sg?String(sg.w):'',r:'',done:false}));
+    // weight stays EMPTY with the suggestion as a placeholder (same feel as
+    // reps): type fresh digits, or just tap ✓ to accept the suggestion as-is
+    S.draft.sets[i]=Array.from({length:tg[i]},()=>({w:'',r:'',done:false}));
   });
   save();V.screen='workout';render();
 }
@@ -1329,23 +1361,28 @@ function libItems(){
 }
 function library(){
   const picking=V.pick&&S.draft&&S.meso;
-  const pickM=picking?(EX[S.draft.ex[V.pick.slot]]||{}).m:null;
-  const q=(V.libq||'').toLowerCase(),mf=picking?pickM:(V.libm||'all');
+  const adding=picking&&V.pick.slot==='add';
+  const pickM=picking&&!adding?(EX[S.draft.ex[V.pick.slot]]||{}).m:null;
+  const q=(V.libq||'').toLowerCase(),mf=(picking&&!adding)?pickM:(V.libm||'all');
   const groups=[...Object.keys(MUSCLES),...Object.keys(LIB_GROUPS)];
   const items=libItems().filter(x=>
     (mf==='all'||x.m===mf)&&(!q||x.name.toLowerCase().includes(q)));
   const byM={};items.forEach(x=>(byM[x.m]=byM[x.m]||[]).push(x));
+  Object.keys(byM).forEach(m=>byM[m].sort((a,b)=>(isFav(a.id)?0:1)-(isFav(b.id)?0:1)));
   return header()+`
   <div class="row between" style="margin-bottom:10px">
-    <h2>${picking?'Replace exercise':'Exercise Library'}</h2>
+    <h2>${adding?'Add exercise':picking?'Replace exercise':'Exercise Library'}</h2>
     <button class="btn small ghost" data-a="${picking?'pick_cancel':'nav:more'}">${picking?'Cancel':'Close'}</button>
   </div>
-  ${picking?`<div class="cue" style="margin-bottom:10px"><span class="st">⇄</span>
+  ${adding?`<div class="cue" style="margin-bottom:10px"><span class="st">＋</span>
+    <span>Tap any lift to <b>add it to today's workout</b> — it joins this day for the rest of the meso,
+    starting at 2 sets. Search or filter by muscle.</span></div>`
+  :picking?`<div class="cue" style="margin-bottom:10px"><span class="st">⇄</span>
     <span>Replacing <b>${esc(EX[S.draft.ex[V.pick.slot]].name)}</b> — tap any ${groupName(pickM)} exercise below.
     It replaces this slot for the rest of the meso; targets recalc for the new lift.</span></div>`:''}
   <input class="in" type="search" placeholder="Search ${libItems().length} exercises…" value="${esc(V.libq||'')}"
     data-in="libq" style="margin-bottom:10px">
-  ${picking?'':`<div class="weekchips">
+  ${(picking&&!adding)?'':`<div class="weekchips">
     <button class="wc ${mf==='all'?'on':''}" data-a="libm:all">All</button>
     ${groups.map(m=>`<button class="wc ${mf===m?'on':''}" data-a="libm:${m}">${groupName(m)}</button>`).join('')}
   </div>
@@ -1367,6 +1404,7 @@ function library(){
           ${x.id&&S.lastPerf[x.id]?`<span class="xs num" style="color:var(--grn)">${esc((S.lastPerf[x.id].date||'').slice(5))}</span>`:''}
           <span class="xs dim num">${x.lo}–${x.hi}</span>
           <span class="chip" style="font-size:.62rem">${esc(x.equip)}</span>
+          ${x.id?`<button style="background:none;border:none;cursor:pointer;font-size:.95rem;padding:2px" data-a="fav:${x.id}">${isFav(x.id)?'⭐':'☆'}</button>`:''}
           <a class="vlink" href="${url}" target="_blank" rel="noopener">▶</a>
         </span></div>`;}).join('')}
   </div>`).join('')||'<div class="card"><p class="sm mut">No matches.</p></div>'}`;
@@ -1430,11 +1468,12 @@ function profile(){
   </div>`:''}
   <button class="btn primary" data-a="pf_save" style="${ready?'':'opacity:.6'}">${S.profile?'Save Changes':'Start Training'}</button>
   ${S.profile?`<button class="btn ghost" style="margin-top:8px" data-a="nav:more">Cancel</button>`:''}
-  ${!S.profile&&DRIVE.clientId?`<div class="card" style="margin-top:16px;padding:14px 16px">
-    <p class="sm mut" style="margin-bottom:10px">Used the app before? Skip all this — pull your workouts,
-    plan and profile straight back from your own Google Drive. Sign in with the same
-    Google account the old app was connected to.</p>
-    <button class="btn" data-a="drive_connect">☁️ Restore from Google Drive</button>
+  ${!S.profile?`<div class="card" style="margin-top:16px;padding:14px 16px">
+    <p class="sm mut" style="margin-bottom:10px">Used the app before? Skip all this — restore your workouts,
+    plan and profile from your own Google Drive (same Google account the old app used) or from a
+    backup file you saved.</p>
+    ${DRIVE.clientId?`<button class="btn" data-a="drive_connect">☁️ Restore from Google Drive</button>`:''}
+    <label class="btn ghost" style="margin-top:8px">📄 Restore from backup file<input type="file" accept=".json,application/json" id="importfile" style="display:none"></label>
     <div id="rlog" class="xs mut" style="margin-top:10px;white-space:pre-line">${esc(V.restoreLog||'')}</div>
   </div>`:''}`;
 }
@@ -2149,6 +2188,7 @@ function workout(){
   <div class="wkprog"><div id="wp-fill" class="fill" style="width:${Math.round(100*setsDone/setsTotal)}%"></div></div>`
   +note+principle+warmup
   +day.slots.map((s,si)=>wcard(si)).join('')
+  +`<button class="btn ghost" style="margin-bottom:12px" data-a="pick:add">＋ Add exercise to this workout</button>`
   +`<div class="card" style="padding:13px 16px">
     <details>
       <summary>⚠️ Feel pain? Quick triage</summary>
@@ -2196,6 +2236,7 @@ function wcard(si){
         </select>
         <a class="btn small ghost" style="color:var(--red)" href="${vidUrl(ex.id)}" target="_blank" rel="noopener">▶ Form</a>
         <button class="btn small ghost" title="Replace from library" data-a="pick:${si}">⇄</button>
+        <button class="btn small ghost" title="Remove from this day" data-a="rmex:${si}">✕</button>
       </div>
       <div class="xs mut" style="margin-bottom:4px">
         ${sets.length} × ${rr.lo}–${rr.hi} reps @ ${deload?'4+':rir} RIR
@@ -2217,6 +2258,13 @@ function wcard(si){
         <button class="chk ${x.done?'on':''}" data-a="chk:${si}:${xi}">${(function(){
           if(!x.done||!sg)return '✓';
           const lp=S.lastPerf[ex.id];if(!lp||!(+x.r))return '✓';
+          const wNow=+x.w||0,wOld=+lp.w||0;
+          if(wNow>0&&wOld>0&&wNow!==wOld){
+            // weight changed: judge by estimated 1RM, not raw reps —
+            // 60×12 beats 50×15 even though the reps went down
+            const a=e1rm(wNow,+x.r),b=e1rm(wOld,lp.r);
+            return a>b*1.01?'▲':a<b*0.99?'▼':'✓';
+          }
           return +x.r>lp.r?'▲':+x.r<lp.r?'▼':'✓';})()}</button>
       </div>`).join('')}
       <div class="row" style="margin-top:10px">
@@ -2649,7 +2697,12 @@ const A={
     save();render();},
   chk:arg=>{const[si,xi]=arg.split(':').map(Number);
     const x=S.draft.sets[si][xi];
-    if(!x.done){ // sanity-check before logging — protect the algorithm from typos
+    if(!x.done){
+      // empty boxes = "the suggestion was right": adopt placeholder values on ✓
+      const tt=nextTarget(S.draft.ex[si],S.draft.w);
+      if(!String(x.w||'').trim()&&tt&&tt.w)x.w=String(tt.w);
+      if(!String(x.r||'').trim()&&tt&&tt.reps)x.r=String(tt.reps);
+      // sanity-check before logging — protect the algorithm from typos
       const err=setInputError(S.draft.ex[si],+x.w,+x.r);
       if(err){toast(err,true);return;}
       const lp=S.lastPerf[S.draft.ex[si]],kg=S.profile&&S.profile.units==='kg';
@@ -2732,6 +2785,10 @@ const A={
   dgoal:g=>{S.profile.goal=g;save();render();},
   dmeals:n=>{S.profile.meals=+n;if(S.dietPrefs)S.dietPrefs.meals=+n;save();render();},
   libm:m=>{V.libm=m;render();},
+  fav:id=>{S.favs=S.favs||[];const i=S.favs.indexOf(id);
+    if(i>=0){S.favs.splice(i,1);toast('Removed from favorites');}
+    else{S.favs.push(id);toast('⭐ Favorited — it\'ll show up first in menus and future programs');}
+    save();render();},
   dpset:arg=>{const i=arg.indexOf(':');V.dp[arg.slice(0,i)]=arg.slice(i+1);render();},
   dp_save:()=>{S.dietPrefs={meals:(S.profile&&S.profile.meals)||4,train:V.dp.train,window:V.dp.window,
       style:V.dp.style||'std',avoid:(V.dp.avoid||[]).slice()};
@@ -2766,17 +2823,41 @@ const A={
   drive_off:()=>{
     try{if(gTok&&window.google)google.accounts.oauth2.revoke(gTok);}catch(e){}
     gTok=null;S.drive=null;V.driveNeeds=false;saveQuiet();render();toast('Google Drive disconnected');},
-  pick:si=>{V.pick={slot:+si};V.libq='';V.screen='library';render();},
+  pick:si=>{V.pick={slot:si==='add'?'add':+si};V.libq='';V.screen='library';render();},
   pick_cancel:()=>{V.pick=null;V.libq='';V.screen='workout';render();},
   pickex:id=>{
     if(!V.pick||!S.draft)return;
+    if(V.pick.slot==='add'){ // append a brand-new exercise to today's day
+      const M=S.meso,d=S.draft.d,w=S.draft.w,m=EX[id].m;
+      if(!MUSCLES[m]){toast('That one is reference-only — pick a lift from a main muscle group',true);return;}
+      M.days[d].slots.push({m,ex:id});
+      const si=M.days[d].slots.length-1;
+      // every stored week plan for this day gains the new slot (2 sets, inside the 3-cap)
+      Object.keys(M.plan).forEach(k=>{if(k.endsWith('_'+d))M.plan[k].push(2);});
+      S.draft.ex[si]=id;
+      S.draft.sets[si]=Array.from({length:w>=M.weeks?1:2},()=>({w:'',r:'',done:false}));
+      save();V.pick=null;V.libq='';V.screen='workout';render();
+      toast('Added '+EX[id].name+' — it\'s part of this day now');return;
+    }
     const si=V.pick.slot;
     S.draft.ex[si]=id;
     S.meso.days[S.draft.d].slots[si].ex=id; // permanent for the rest of the meso
-    const sg=suggest(id,S.draft.w);
-    (S.draft.sets[si]||[]).forEach(x=>{if(!x.done)x.w=sg?String(sg.w):'';});
+    (S.draft.sets[si]||[]).forEach(x=>{if(!x.done)x.w='';}); // new lift's suggestion shows as placeholder
     save();V.pick=null;V.libq='';V.screen='workout';render();
     toast('Swapped to '+EX[id].name+' for the rest of this meso');},
+  rmex:si=>{si=+si;
+    const M=S.meso,d=S.draft.d;
+    if((S.draft.sets[si]||[]).some(x=>x.done)){
+      toast('It has logged sets today — uncheck them first if you really want it gone',true);return;}
+    if(M.days[d].slots.length<=1){toast('A workout needs at least one exercise',true);return;}
+    if(!confirm('Remove '+EX[S.draft.ex[si]].name+' from this day for the rest of the meso?'))return;
+    M.days[d].slots.splice(si,1);
+    Object.keys(M.plan).forEach(k=>{if(k.endsWith('_'+d))M.plan[k].splice(si,1);});
+    const ex={},sets={};let j=0; // draft maps are index-keyed: reindex past the gap
+    Object.keys(S.draft.ex).map(Number).sort((a,b)=>a-b).forEach(i=>{
+      if(i===si)return;ex[j]=S.draft.ex[i];sets[j]=S.draft.sets[i];j++;});
+    S.draft.ex=ex;S.draft.sets=sets;
+    save();render();toast('Removed from this day');},
   su_rec:()=>{const r=V._rec||recProgram(S.profile);
     if(r.tpl)A.su_tpl(r.tpl);else A.su_preset(r.preset);},
   su_tpl:k=>{
