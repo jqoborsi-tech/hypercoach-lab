@@ -1088,7 +1088,10 @@ function hypertrophyOrder(slots){
 function createMeso(cfg){
   const days=cfg.days.map(d=>({name:d.name,slots:d.slots.map(s=>({m:s[0],ex:s[1]}))}));
   applyFavorites(days);
-  days.forEach(d=>d.slots=hypertrophyOrder(d.slots));
+  days.forEach(d=>{d.slots=hypertrophyOrder(d.slots);
+    // a session is 6-8 quality exercises, not 12: compounds + favorites are
+    // already sorted to the front, so the tail (late isolation) is what drops
+    if(d.slots.length>MAX_EX_PER_DAY)d.slots=d.slots.slice(0,MAX_EX_PER_DAY);});
   // gather weekly slot positions per muscle
   const pos={};
   days.forEach((d,di)=>d.slots.forEach((s,si)=>{(pos[s.m]=pos[s.m]||[]).push([di,si]);}));
@@ -1109,15 +1112,30 @@ function createMeso(cfg){
 
 /* Targets for (week, day): plan entry, else deload = half of week 1,
    else fall back to the latest earlier week generated for that day. */
+/* Session ceiling: past ~15-20 hard sets in one session, per-set quality
+   collapses and the extra work is fatigue, not stimulus ("junk volume").
+   16 is the ceiling for every workout; set counts scale down to fit —
+   3s are trimmed before any 2 is touched. */
+const SESSION_CAP=16,MAX_EX_PER_DAY=8;
+function sessionCap(){return (S.settings&&S.settings.sessionCap)||SESSION_CAP;}
+function capSession(arr){
+  const CAP=sessionCap();let sum=arr.reduce((a,b)=>a+b,0);
+  if(sum<=CAP)return arr;
+  const out=arr.slice();
+  const lower=min=>{while(sum>CAP){let i=-1,best=min;
+    out.forEach((v,j)=>{if(v>best){best=v;i=j;}});if(i<0)return;out[i]--;sum--;}};
+  lower(2);lower(1);
+  return out;
+}
 function targetsFor(w,d){
   const M=S.meso;if(!M)return null;
   if(w>=M.weeks){return M.plan['1_'+d].map(()=>1);} // deload: 1 set per exercise
   // 2-3 working sets per exercise, HARD max 3 — progression lives in reps and
   // load, not stacked sets. Also retro-caps any older plan that grew past 3.
   const cap=t=>Math.min(3,Math.max(1,t||1));
-  if(M.plan[w+'_'+d])return M.plan[w+'_'+d].map(cap);
-  for(let x=w-1;x>=1;x--)if(M.plan[x+'_'+d])return M.plan[x+'_'+d].map(cap);
-  return M.days[d].slots.map(()=>2);
+  if(M.plan[w+'_'+d])return capSession(M.plan[w+'_'+d].map(cap));
+  for(let x=w-1;x>=1;x--)if(M.plan[x+'_'+d])return capSession(M.plan[x+'_'+d].map(cap));
+  return capSession(M.days[d].slots.map(()=>2));
 }
 function muscleWeekSets(M,w,m){ // planned weekly sets for muscle at week w
   let t=0;
@@ -1158,7 +1176,8 @@ function applyProgression(w,d,fb){
       }
       const L=LM(m);
       const open=idxs.filter(i=>next[i]<CAP).sort((a,b)=>next[a]-next[b]);
-      if(open.length&&weeklyOther+curDay+1<=L.mav)next[open[0]]++;
+      const sessionTotal=next.reduce((a,b)=>a+b,0);
+      if(open.length&&weeklyOther+curDay+1<=L.mav&&sessionTotal+1<=sessionCap())next[open[0]]++;
     }else if(dir<0){
       const big=idxs.slice().sort((a,b)=>next[b]-next[a])[0];
       if(next[big]>1)next[big]--;
@@ -1193,11 +1212,35 @@ function nextTarget(exId,w){
   // → 8 @ 2 RIR) instead of demanding a rep PR on an easy day.
   const curRir=M?rirFor(w,M.weeks):2;
   const delta=(lp.rir!=null?lp.rir-curRir:1);
-  const reps=Math.max(1,lp.r+delta);
-  const hint=reps>rr.hi?' · topped the range — add weight if you like, the target will follow':'';
-  const easeNote=delta<0?' (backing off to honor '+curRir+' RIR — last time was closer to max)':'';
-  return {w:lp.w,reps,alt:null,
-    note:(down?'Chasing your actual — ':'Last time '+fmtSet(lp.w,lp.r)+' — ')+'aim for '+reps+easeNote+hint,down};
+  let reps=Math.max(1,lp.r+delta),wt=lp.w;
+  // DOUBLE PROGRESSION: reps climb only to the top of the working range —
+  // 12 for big compounds, 15 for isolation (never above the lift's own range).
+  // Past that, the LOAD goes up one plate-step and reps reset lower, with the
+  // new rep target derived from your estimated max at the new weight so the
+  // prescribed RIR still holds. Heavy, concentrated sets — not cardio.
+  const top=Math.min(rr.hi,ex.big?12:15);
+  let bumped=false;
+  if(reps>top&&wt>0){
+    const step=loadStep(ex,wt);
+    const trueMax=e1rm(wt,lp.r+(lp.rir!=null?lp.rir:1)); // est. 1RM incl. reps in reserve
+    wt=Math.round((wt+step)/step)*step;
+    const maxRepsAtNew=30*(trueMax/wt-1);
+    reps=Math.max(rr.lo,Math.min(top,Math.round(maxRepsAtNew-curRir)));
+    bumped=true;
+  }else if(reps>top){reps=top;} // bodyweight: hold at the top of the range
+  const easeNote=delta<0&&!bumped?' (backing off to honor '+curRir+' RIR — last time was closer to max)':'';
+  const bwNote=(!bumped&&wt===0&&lp.r>=top)?' · at the top of the range — add a belt/weight or a harder variation':'';
+  const note=bumped
+    ?'Topped '+top+' reps at '+lp.w+' — move up to '+fmtSet(wt,reps)+' ('+curRir+' RIR)'
+    :(down?'Chasing your actual — ':'Last time '+fmtSet(lp.w,lp.r)+' — ')+'aim for '+reps+easeNote+bwNote;
+  return {w:wt,reps,alt:null,note,down};
+}
+/* One honest plate-step for the equipment: small lifts / light loads move in
+   2.5 lb (1.25 kg); compounds and anything heavier move in 5 lb (2.5 kg). */
+function loadStep(ex,w){
+  const kg=S.profile&&S.profile.units==='kg';
+  if(kg)return (ex.big||w>=40)?2.5:1.25;
+  return (ex.big||w>=60)?5:2.5;
 }
 function suggest(exId,w){ // weight prefill + warm-up source
   const t=nextTarget(exId,w);
