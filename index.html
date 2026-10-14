@@ -1187,9 +1187,17 @@ function nextTarget(exId,w){
   if(pain)return {w:lp.w,reps:lp.r,alt:null,
     note:'Joint pain flagged — match '+fmtSet(lp.w,lp.r)+', or ⇄ replace it',down:true};
   const down=!!(lp.prevEst&&lp.est<lp.prevEst*0.97);
-  const hint=lp.r+1>rr.hi?' · topped the range — add weight if you like, the target will follow':'';
-  return {w:lp.w,reps:lp.r+1,alt:null,
-    note:(down?'Chasing your actual — ':'Last time '+fmtSet(lp.w,lp.r)+' — ')+'aim for '+(lp.r+1)+hint,down};
+  // RIR-aware target: reps = last reps + (RIR you had then − RIR prescribed now).
+  // Within a block the weekly RIR drop funds the usual +1; at a NEW block's
+  // 2-RIR week after an all-out set, this correctly backs you OFF (10 @ 0 RIR
+  // → 8 @ 2 RIR) instead of demanding a rep PR on an easy day.
+  const curRir=M?rirFor(w,M.weeks):2;
+  const delta=(lp.rir!=null?lp.rir-curRir:1);
+  const reps=Math.max(1,lp.r+delta);
+  const hint=reps>rr.hi?' · topped the range — add weight if you like, the target will follow':'';
+  const easeNote=delta<0?' (backing off to honor '+curRir+' RIR — last time was closer to max)':'';
+  return {w:lp.w,reps,alt:null,
+    note:(down?'Chasing your actual — ':'Last time '+fmtSet(lp.w,lp.r)+' — ')+'aim for '+reps+easeNote+hint,down};
 }
 function suggest(exId,w){ // weight prefill + warm-up source
   const t=nextTarget(exId,w);
@@ -1237,7 +1245,8 @@ function completeDay(fbAns){
     if(w<M.weeks){
       const est=e1rm(best.w,best.r),old=S.lastPerf[e.ex];
       if(old&&old.est){scored++;if(est<old.est*0.97)downCt++;}
-      S.lastPerf[e.ex]={w:best.w,r:best.r,date:today(),est,prevEst:old&&old.est||null};
+      S.lastPerf[e.ex]={w:best.w,r:best.r,date:today(),est,prevEst:old&&old.est||null,
+        rir:rirFor(w,M.weeks)}; // remember HOW HARD it was, not just what it was
     }
   });
   // HMSIT: performance falling across sessions = MRV reached → deload advice
