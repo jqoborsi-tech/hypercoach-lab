@@ -118,7 +118,8 @@
 
 <div id="app"></div>
 <div id="timerbar"><div><div class="lbl">Rest</div><div class="tt" id="tt">0:00</div></div>
-  <button class="btn small ghost" data-a="timer_x">Skip</button><div class="bar" id="tbar"></div></div>
+  <div style="display:flex;gap:8px"><button class="btn small ghost" data-a="timer_plus">+30s</button>
+  <button class="btn small ghost" data-a="timer_x">Skip</button></div><div class="bar" id="tbar"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1354,10 +1355,11 @@ function warmupPlan(w){
 }
 
 /* ---------- Rest timer ---------- */
-let tInt=null;
-function stopTimer(){clearInterval(tInt);const el=$('#timerbar');if(el)el.style.display='none';}
+let tInt=null,tHide=null;
+function stopTimer(){clearInterval(tInt);clearTimeout(tHide);const el=$('#timerbar');if(el)el.style.display='none';}
 function startTimer(secs){
   V.timerEnd=Date.now()+secs*1000;V.timerTotal=secs;
+  clearTimeout(tHide);
   $('#timerbar').style.display='flex';
   clearInterval(tInt);tInt=setInterval(tickTimer,250);tickTimer();
 }
@@ -1372,8 +1374,24 @@ function tickTimer(){
     try{const c=new (window.AudioContext||window.webkitAudioContext)();
       const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);
       o.frequency.value=880;g.gain.value=.25;o.start();o.stop(c.currentTime+.3);}catch(e){}
-    setTimeout(()=>{$('#timerbar').style.display='none';},1600);
+    tHide=setTimeout(()=>{if(V.timerEnd<=Date.now())$('#timerbar').style.display='none';},1600);
   }
+}
+
+/* iOS keyboard fix: position:fixed pins to the LAYOUT viewport, so while the
+   keyboard is up (or just dismissed mid-scroll) the rest bar and tab bar can
+   drift mid-screen and get clipped. Re-pin both to the visual viewport. */
+let repin=()=>{};
+if(window.visualViewport){
+  const vv=window.visualViewport;let vvRaf=0;
+  const pin=()=>{vvRaf=0;
+    const off=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+    const t=off>1?'translateY(-'+off+'px)':'';
+    const tb=$('#timerbar');if(tb)tb.style.transform=t;
+    const tabs=document.querySelector('.tabs');if(tabs)tabs.style.transform=t;};
+  repin=()=>{if(!vvRaf)vvRaf=requestAnimationFrame(pin);};
+  vv.addEventListener('resize',repin);
+  vv.addEventListener('scroll',repin);
 }
 
 /* ---------- Rendering ---------- */
@@ -1394,6 +1412,7 @@ function render(){
     requestAnimationFrame(()=>window.scrollTo(0,y));
   }else window.scrollTo(0,0);
   V._viewKey=viewKey;
+  repin();
 }
 function tabsHtml(){
   if(['welcome','setup','feedback','profile'].includes(V.screen))return '';
@@ -2781,7 +2800,12 @@ const A={
     completeDay({overall:V.fb.overall,mus:V.fb.mus});},
   fbpain:id=>{const i=V.fb.pain.indexOf(id);
     if(i>=0)V.fb.pain.splice(i,1);else V.fb.pain.push(id);render();},
-  timer_x:()=>{clearInterval(tInt);$('#timerbar').style.display='none';},
+  timer_x:()=>{stopTimer();},
+  timer_plus:()=>{clearTimeout(tHide);
+    V.timerEnd=Math.max(Date.now(),V.timerEnd||0)+30000;
+    V.timerTotal=(V.timerTotal||0)+30;
+    $('#timerbar').style.display='flex';
+    clearInterval(tInt);tInt=setInterval(tickTimer,250);tickTimer();},
   planw:x=>{V.planWeek=+x;render();},
   bw_add:()=>{const v=parseFloat($('#bwin').value);
     if(!v){toast('Enter a weight first');return;}
