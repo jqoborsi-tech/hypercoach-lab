@@ -1394,6 +1394,26 @@ if(window.visualViewport){
   vv.addEventListener('scroll',repin);
 }
 
+/* Coming back mid-workout (app switch, phone lock, or iOS reloading the page):
+   jump straight to the first exercise with an unlogged set — or the Finish
+   button when everything's done. */
+function scrollToNextSet(){
+  if(V.screen!=='workout'||!S.draft)return;
+  const sets=S.draft.sets;
+  const si=Object.keys(sets).map(Number).sort((a,b)=>a-b)
+    .find(k=>(sets[k]||[]).some(x=>!x.done));
+  const el=si==null?$('#finish-slot'):document.getElementById('xcard-'+si);
+  if(!el)return;
+  // scroll now AND next frame — same trick as render()'s restore; rAF alone
+  // can miss the moment iOS unfreezes the page
+  const go=()=>window.scrollTo(0,Math.max(0,el.getBoundingClientRect().top+window.scrollY-10));
+  go();requestAnimationFrame(go);setTimeout(go,150);
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')scrollToNextSet();
+});
+window.addEventListener('pageshow',e=>{if(e.persisted)scrollToNextSet();});
+
 /* ---------- Rendering ---------- */
 function render(){
   const app=$('#app');
@@ -3009,9 +3029,11 @@ document.addEventListener('change',e=>{ // auto-match: apply new weight to later
 });
 
 /* resume mid-workout after reload */
+try{history.scrollRestoration='manual';}catch(e){} // we place the scroll ourselves
 if(S.profile&&S.draft&&S.meso&&!S.meso.done)V.screen='workout';
 const cameBackWithToken=driveHashToken(); // returning from redirect sign-in?
 render();
+scrollToNextSet(); // reload mid-workout lands on the set that's next
 driveInit();
 if(cameBackWithToken){toast('Google connected ☁️');driveBootSync();}
 </script>
