@@ -1354,28 +1354,76 @@ function warmupPlan(w){
   return ladder.map(x=>({w:Math.max(2.5,r25(w*x[0])),r:x[1]}));
 }
 
-/* ---------- Rest timer ---------- */
+/* ---------- Rest timer ----------
+   timerEnd is an absolute timestamp, so the countdown is always derived from
+   the clock, never from how many ticks we managed to run. iOS throttles or
+   kills setInterval whenever the app is backgrounded or the screen locks —
+   i.e. every time the phone goes in a pocket between sets — so the interval
+   is a repaint loop only and gets re-armed on every return to the foreground
+   via resumeTimer(). The deadline also persists to S, so an iOS page reload
+   mid-workout no longer loses the rest you were in. */
 let tInt=null,tHide=null;
-function stopTimer(){clearInterval(tInt);clearTimeout(tHide);const el=$('#timerbar');if(el)el.style.display='none';}
+function timerSave(){ // deadline only, and saveQuiet so we don't push to Drive every set
+  if(V.timerEnd>Date.now())S.rest={end:V.timerEnd,total:V.timerTotal};
+  else if(S.rest)delete S.rest;
+  else return;
+  try{saveQuiet();}catch(e){}
+}
+function timerLoop(){clearInterval(tInt);tInt=setInterval(tickTimer,250);tickTimer();}
+function stopTimer(){
+  clearInterval(tInt);clearTimeout(tHide);
+  V.timerEnd=0;V.timerTotal=0;timerSave();
+  const el=$('#timerbar');if(el)el.style.display='none';
+}
 function startTimer(secs){
-  V.timerEnd=Date.now()+secs*1000;V.timerTotal=secs;
+  // a missing or junk rest setting used to leave the bar stuck reading NaN:NaN
+  secs=+secs;if(!isFinite(secs)||secs<=0)secs=90;
+  V.timerEnd=Date.now()+secs*1000;V.timerTotal=secs;timerSave();
   clearTimeout(tHide);
+  audioUnlock(); // we're inside the tap that logged the set: the one moment iOS lets us arm audio
   $('#timerbar').style.display='flex';
-  clearInterval(tInt);tInt=setInterval(tickTimer,250);tickTimer();
+  timerLoop();
+}
+/* Back in the foreground: the interval may have been throttled to a crawl or
+   dropped while we were away. Re-arm it and repaint from the clock. */
+function resumeTimer(){
+  if(V.timerEnd>Date.now()){$('#timerbar').style.display='flex';timerLoop();}
+  else if(V.timerEnd)tickTimer(); // ran out while backgrounded: settle, alert, hide
 }
 function tickTimer(){
   const left=Math.max(0,V.timerEnd-Date.now());
   const s=Math.ceil(left/1000);
   $('#tt').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-  $('#tbar').style.width=(100*left/(V.timerTotal*1000))+'%';
-  if(left<=0){
+  const tot=V.timerTotal*1000;
+  $('#tbar').style.width=(tot>0?100*left/tot:0)+'%';
+  if(!(left>0)){ // !(left>0) also catches NaN, which left<=0 silently did not
     clearInterval(tInt);
-    try{navigator.vibrate&&navigator.vibrate([180,90,180]);}catch(e){}
-    try{const c=new (window.AudioContext||window.webkitAudioContext)();
-      const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);
-      o.frequency.value=880;g.gain.value=.25;o.start();o.stop(c.currentTime+.3);}catch(e){}
-    tHide=setTimeout(()=>{if(V.timerEnd<=Date.now())$('#timerbar').style.display='none';},1600);
+    V.timerEnd=0;timerSave();
+    try{navigator.vibrate&&navigator.vibrate([180,90,180]);}catch(e){} // no-op on iOS Safari
+    beep();
+    tHide=setTimeout(()=>{if(!(V.timerEnd>Date.now()))$('#timerbar').style.display='none';},1600);
   }
+}
+/* One AudioContext for the life of the page. The old code built a fresh one on
+   every completed rest and never closed it; WebKit caps how many may exist, so
+   after a handful of sets `new AudioContext()` threw into an empty catch and
+   the beep went silent for the rest of the workout. A context also starts
+   suspended unless it is created or resumed inside a user gesture, hence
+   audioUnlock() on every tap and before every beep. */
+let aCtx=null;
+function audioUnlock(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    if(!aCtx)aCtx=new AC();
+    if(aCtx.state==='suspended')aCtx.resume();
+  }catch(e){}
+}
+function beep(){
+  try{
+    audioUnlock();if(!aCtx)return;
+    const o=aCtx.createOscillator(),g=aCtx.createGain();o.connect(g);g.connect(aCtx.destination);
+    o.frequency.value=880;g.gain.value=.25;o.start();o.stop(aCtx.currentTime+.3);
+  }catch(e){}
 }
 
 /* iOS keyboard fix: position:fixed pins to the LAYOUT viewport, so while the
@@ -1410,9 +1458,10 @@ function scrollToNextSet(){
   go();requestAnimationFrame(go);setTimeout(go,150);
 }
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible')scrollToNextSet();
+  if(document.visibilityState==='visible'){resumeTimer();scrollToNextSet();}
 });
-window.addEventListener('pageshow',e=>{if(e.persisted)scrollToNextSet();});
+window.addEventListener('pageshow',e=>{if(e.persisted){resumeTimer();scrollToNextSet();}});
+window.addEventListener('focus',resumeTimer); // home-screen apps don't always fire visibilitychange
 
 /* ---------- Rendering ---------- */
 function render(){
@@ -2824,8 +2873,9 @@ const A={
   timer_plus:()=>{clearTimeout(tHide);
     V.timerEnd=Math.max(Date.now(),V.timerEnd||0)+30000;
     V.timerTotal=(V.timerTotal||0)+30;
+    timerSave();
     $('#timerbar').style.display='flex';
-    clearInterval(tInt);tInt=setInterval(tickTimer,250);tickTimer();},
+    timerLoop();},
   planw:x=>{V.planWeek=+x;render();},
   bw_add:()=>{const v=parseFloat($('#bwin').value);
     if(!v){toast('Enter a weight first');return;}
@@ -2964,6 +3014,7 @@ const A={
 };
 
 document.addEventListener('click',e=>{
+  audioUnlock(); // keep the beep armed; iOS only permits this inside a gesture
   const t=e.target.closest('[data-a]');if(!t)return;
   const i=t.dataset.a.indexOf(':');
   const a=i<0?t.dataset.a:t.dataset.a.slice(0,i);
@@ -3034,6 +3085,10 @@ if(S.profile&&S.draft&&S.meso&&!S.meso.done)V.screen='workout';
 const cameBackWithToken=driveHashToken(); // returning from redirect sign-in?
 render();
 scrollToNextSet(); // reload mid-workout lands on the set that's next
+if(S.rest&&S.rest.end>Date.now()){ // a rest was still running when iOS reloaded the page
+  V.timerEnd=S.rest.end;V.timerTotal=+S.rest.total>0?+S.rest.total:90;
+  $('#timerbar').style.display='flex';timerLoop();
+}else if(S.rest){delete S.rest;saveQuiet();}
 driveInit();
 if(cameBackWithToken){toast('Google connected ☁️');driveBootSync();}
 </script>
