@@ -162,6 +162,12 @@
 </style>
 
 <div id="app"></div>
+<div id="about" style="max-width:520px;margin:18px auto 0;padding:0 16px;font-size:.75rem;color:#71717a;line-height:1.5;text-align:center">
+  <b style="color:#a1a1aa">HyperCoach</b> is a free personal strength-training log and planner. It builds a weekly
+  lifting program, records the sets you do, and sets your next targets. Your data stays on your device; if you
+  choose to connect Google Drive, the app keeps one backup file in your own Drive.<br>
+  <a href="privacy.html" style="color:#6aa3d9">Privacy Policy</a>
+</div>
 <div id="timerbar"><div style="display:flex;align-items:center;gap:14px"><div><div class="lbl">Rest</div><div class="tt" id="tt">0:00</div></div>
   <button class="btn small ghost" data-a="timer_plus">+30s</button></div>
   <button class="btn small ghost" data-a="timer_x">Skip</button><div class="bar" id="tbar"></div></div>
@@ -1800,6 +1806,7 @@ function render(){
   }else{window.scrollTo(0,0);
     app.classList.remove('enter');void app.offsetWidth;app.classList.add('enter');}
   V._viewKey=viewKey;
+  const ab=$('#about');if(ab)ab.style.display=S.profile?'none':'block';
   repin();
 }
 const TAB_ICONS={
@@ -3260,7 +3267,8 @@ function more(){
       ${a.done?'':`<button class="btn small ghost" data-a="meso_resume:${i}">Resume</button>`}
     </div>`).join('')}
     <p class="xs dim" style="margin-top:6px">Resume swaps an unfinished block back in — your current one gets saved here.</p></div>`:''}
-  <p class="xs dim" style="text-align:center;margin:8px 0 20px">Built on published hypertrophy, recovery &amp; sports-nutrition research.</p>`;
+  <p class="xs dim" style="text-align:center;margin:8px 0 20px">Built on published hypertrophy, recovery &amp; sports-nutrition research.
+    · <a href="privacy.html" style="color:var(--blu)">Privacy Policy</a></p>`;
 }
 
 /* ---------- Actions ---------- */
